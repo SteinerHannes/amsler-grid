@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="fabric.min.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+<label for="horizontal">Horizontal: </label><input type="checkbox" id="horizontal" onclick="toggleHorizontal()">
+<label for="vertical">Vertikal: </label><input type="checkbox" id="vertical" onclick="toggleVertical()">
+<input type="button" id="return" onclick="returnAmslerGrid()" value="Output As Array">
+<input type="button" id="print" onclick="exportCanvasAsPNG()" value="Download As PNG">
+<canvas id="grid" width="720" height="450"></canvas>
+<script>
+    /**
+     * Canvas-Variable für das Grid:
+     * - ensteht aus dem HTML-Canvas-Element mit der id="grid"
+     * Attribute:
+     *      selection: false
+     *          Verhindert das markieren von Knoten auf dem Grid
+     * Framework:
+     *      fabric.js
+     */
+    let canvasGrid = new fabric.Canvas('grid',{
+        selection: false,
+    });
+    // setzt die Entstehungspunkte jedes neuen Objektes in die Mitte des Objektes (Bsp. bei Kreis: Mittelpunkt ist Entstehungspunkt)
+    fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
+
+    /** Anzahl der horizotalen Linien */
+    let amountOfHorizontalLines = 9;
+    /** Anzahl der vertikalen Linien */
+    let amountOfVerticalLines = 16;
+
+    /**
+     * Horizontaler Faktor für den Abstand der vertikalen Linien
+     * Beispiel:
+     *           |          |
+     *  <Faktor> | <Faktor> | <Faktor>
+     *           |          |
+     *  |<-     Canvas  Breite     ->|
+     */
+    const widthScale = canvasGrid.width / (amountOfVerticalLines+1);
+    /** Vertikaler Faktor für den Abstand der horizontalen Linien (ähnlich wie const widthScale) */
+    const heightScale = canvasGrid.height / (amountOfHorizontalLines+1);
+
+    /**
+     * 2D Array mit allen Bezierkurven, die von oben nach unten verlaufen
+     *
+     */
+    let verticalLines = [amountOfVerticalLines];
+    /** 2D Array mit alle Mittel-Punkt-Knoten, die mit den verticalen Bezierkurven verknüpft sind */
+    let verticalNodes = [amountOfVerticalLines];
+    let horizontalLines = [amountOfVerticalLines+1];
+    let horizontalNodes = [amountOfVerticalLines+1];
+    let normalNodes = [amountOfVerticalLines];
+
+    /**
+     * Mittelpunkt auf Canvas hinzufügen:
+     * Attribute:
+     *      radius: (Canvas.Breite / Anzahl an verti. Linien)/6 oder
+     *              (Canvas.Höhe / Anzahl an hori. Linien)/6
+     *      left: Canvas.Breite/2
+     *          Abstand von Links
+     *      top: Canvas.Höhe/2
+     *          Abstand von Oben
+     *      fill: schwarz
+     *          Farbe des Kreises
+     *      selectable: false
+     *          Der Kreis kann somit nocht mehr markiert werden (Performance)
+     *      evented: false
+     *          Kreis kann nicht mehr verändert werden und Mauszeiger bleibt gleich (Performance)
+     * Framework:
+     *      fabric.js
+     */
+    canvasGrid.add(new fabric.Circle({
+        radius: (Math.min(canvasGrid.width,canvasGrid.height)/Math.min(amountOfVerticalLines,amountOfHorizontalLines))/6,
+        left: canvasGrid.width/2,
+        top: canvasGrid.height/2,
+        fill: 'black',
+        selectable: false,
+        evented: false
+    }));
+
+    /**
+     * Grid-Funktionen:
+     *      creatAmslerGrid()
+     *      makeLine()
+     *      makeNode()
+     *      makeMiddleNode()
+     *      onObjectMoving()
+     */
+    (function () {
+        // Events, die auf dem Grid stattfinden ('<Event-Name>': <Funktions-Name>)
+        canvasGrid.on({
+            'object:moving': onObjectMoving
+        });
+        // erstellt das dynamische Grid an Hand der Globalen Variablen
+        creatAmslerGrid();
+
+        /**
+         * Erstellt das inteaktive Grid auf der Canvas
+         * zu erst werden die vertikalen Linien mit ihren Mittel-Nodes erstellt,
+         * anschliessend die horizontalen Linien mit ihren Mittel-Nodes.
+         * Sind alle Linien erstlellt werden die Kreuzungs-Knoten erstellt und die anliegenden Linien uebergeben.
+         *
+         * Middel-Node-Name:
+         *  n.name = 'm'
+         * Kreuzungs-Node-Name:
+         *  n.name = 'k'
+         *
+         *  !!! Die Namen werden beim Bewegen der Nodes benötigt - siehe onObjectMoving(e) !!!
+         */
+        function creatAmslerGrid() {
+            // Optimierung fuer das Rendern vieler Objecte auf einmal
+            canvasGrid.renderOnAddRemove = false;
+            for (let x = 1; x <= amountOfVerticalLines; x++) {
+                verticalLines[x-1] = [amountOfHorizontalLines+1];
+                verticalNodes[x-1] = [amountOfHorizontalLines+1];
+                for (let y = 1; y <= amountOfHorizontalLines+1; y++) {
+                    let line = makeLine();
+                    // Bezierkurven-Start-Punkt setzen
+                    line.path[0][1] = (x * widthScale);
+                    line.path[0][2] = (y * heightScale) - heightScale;
+                    // Bezierkurven-Mittel-Punkt setzen
+                    line.path[1][1] = (x * widthScale);
+                    line.path[1][2] = (y * heightScale + (heightScale / 2)) - heightScale;
+                    // Bezierkurven-End-Punkt setzen
+                    line.path[1][3] = (x * widthScale);
+                    line.path[1][4] = (y * heightScale);
+                    verticalLines[x-1][y-1] = line;
+                    canvasGrid.add(line);
+                    let middelNode = makeMiddelNode((x * widthScale), ((y * heightScale + (heightScale / 2)) - heightScale), line);
+                    middelNode.name = "m";
+                    verticalNodes[x-1][y-1] = middelNode;
+                    canvasGrid.add(middelNode);
+                }
+            }
+
+            for (let x = 1; x <= amountOfVerticalLines+1; x++) {
+                horizontalLines[x-1] = [amountOfHorizontalLines];
+                horizontalNodes[x-1] = [amountOfHorizontalLines];
+                for (let y = 1; y <= amountOfHorizontalLines; y++) {
+                    let line = makeLine();
+                    // Bezierkurven-Start-Punkt setzen
+                    line.path[0][1] = (x * widthScale) - widthScale;
+                    line.path[0][2] = (y * heightScale);
+                    // Bezierkurven-Mittel-Punkt setzen
+                    line.path[1][1] = (x * widthScale + (widthScale / 2)) - widthScale;
+                    line.path[1][2] = (y * heightScale);
+                    // Bezierkurven-End-Punkt setzen
+                    line.path[1][3] = (x * widthScale);
+                    line.path[1][4] = (y * heightScale);
+                    horizontalLines[x-1][y-1] = line;
+                    canvasGrid.add(line);
+                    let middelNode = makeMiddelNode((x * widthScale + (widthScale / 2) - widthScale), (y * heightScale), line);
+                    middelNode.name = "m";
+                    horizontalNodes[x-1][y-1] = middelNode;
+                    canvasGrid.add(middelNode);
+                }
+            }
+
+            for (let x = 1; x <= amountOfVerticalLines; x++) {
+                normalNodes[x-1] =  [amountOfHorizontalLines];
+                for (let y = 1; y <= amountOfHorizontalLines; y++) {
+                    // Kreuzungs-Node mit den anliegenden Linien erstellen
+                    let node = makeNode((x * widthScale), (y * heightScale), horizontalLines[x-1][y-1], horizontalLines[x][y-1], verticalLines[x-1][y-1], verticalLines[x-1][y]);
+                    node.name = 'k';
+                    normalNodes[x-1][y-1] = node;
+                    canvasGrid.add(node);
+                }
+            }
+            canvasGrid.renderOnAddRemove = true;
+        }
+
+        /**
+         * Gibt eine Linie als Bezierkurve zurück
+         * Attribute/Parameter:
+         *  'M 0 0 Q': Template für eine Bezierkurven
+         *      M 0 0 = Move zu den Koordinaten [0,0],
+         *      Q = erstelle nun Quadratische Bezier Kurve (ohne weitere Variablen)
+         *      https://www.w3schools.com/graphics/svg_path.asp
+         *  stroke: schwarz
+         *      Farbe der Linie (nicht fill!)
+         *  objectCaching: false
+         *      Objekt wird nun nicht nocheinmal zwischen gespeichert (Performance)
+         *  strokeWidth: 2.5
+         *      Liniendicke
+         *  hasBorders: false
+         *      Wenn es markiert wurde erscheinet kein Rahmen
+         *  hasControls: false
+         *      Wenn es markeirt wurde erscheinen keine spezialen Regler zum verändern
+         */
+        function makeLine() {
+            return new fabric.Path('M 0 0 Q', {
+                stroke: 'black',
+                fill: '',
+                objectCaching: false,
+                strokeWidth: 2.5,
+                hasBorders: false,
+                hasControls: false
+            });
+        }
+
+        /**
+         * Erstellt ein Kreuzungs-Knoten
+         * Attribute/Parameter:
+         *      left: uebergebener Wert
+         *          Abstand von Links
+         *      top: übergebener Wert
+         *          Abstand von Oben
+         *      lineLeft: uebergebene Linie
+         *          ist die in den Knoten von links eingehende Linie
+         *      lineRight, lineUp, lineDown
+         *          siehe oben lineLeft (selbes Prinzip)
+         *          werden benötigt um die richtigen Linien beim Bewegen des Knotens zu verändern/bewegen
+         *      strokeWidth: 1
+         *          Liniendicke
+         *      radius: 1
+         *      fill: schwarz
+         *          Flächenfarbe
+         *      stroke: schwarz
+         *          Randfarbe
+         *      padding: 5
+         *          Abstand um den Kreis drumherum, wo die Mouse-Controlls wirksam werden können
+         *          d.h. es ist einfacher einen Kreis auszuwaehlen und zu bewegen
+         *      hasBorders: false
+         *          Wenn er markiert wurde erscheint kein Rahmen
+         *      hasControls: false
+         *          Wenn er markeirt wurde erscheinen keine spezialen Regler zum verändern,
+         *          die Möglichkeit des Bewegens bleibt aber!
+         * Framework:
+         *      farbric.js
+         */
+        function makeNode(left, top, lineLeft, lineRight, lineUp, lineDown) {
+            const c = new fabric.Circle({
+                left: left,
+                top: top,
+                strokeWidth: 1,
+                radius: 1,
+                fill: '#000',
+                stroke: '#000',
+                padding: 5,
+                hasBorders: false,
+                hasControls: false
+            });
+            c.lineLeft = lineLeft;
+            c.lineRight = lineRight;
+            c.lineUp = lineUp;
+            c.lineDown = lineDown;
+            return c;
+        }
+
+        /**
+         * Erstellt ein Knoten der auf/in der Mitte einer Linie ist
+         * Attribute/Parameter:
+         *      left: uebergebener Wert
+         *          Abstand von Links
+         *      top: übergebener Wert
+         *          Abstand von Oben
+         *      line: uebergebene Linie
+         *          Ist die Linie, auf der dieser Knoten in der Mitte sitzt
+         *          Wird benoetigt, um die richitge Linie beim bewegen des Knotens anzusteuern
+         *      strokeWidth: 1
+         *          Liniendicke
+         *      radius: 2
+         *      fill: schwarz
+         *          Flächenfarbe
+         *      stroke: schwarz
+         *          Randfarbe
+         *      padding: 5
+         *          Abstand um den Kreis drumherum, wo die Mouse-Controlls wirksam werden können
+         *          d.h. es ist einfacher einen Kreis auszuwaehlen und zu bewegen
+         *      hasBorders: false
+         *          Wenn er markiert wurde erscheint kein Rahmen
+         *      hasControls: false
+         *          Wenn er markeirt wurde erscheinen keine spezialen Regler zum verändern,
+         *          die Möglichkeit des Bewegens bleibt aber!
+         */
+        function makeMiddelNode(left, top, line) {
+            let c = new fabric.Circle({
+                left: left,
+                top: top,
+                strokeWidth: 1,
+                radius: 2,
+                fill: '#000',
+                stroke: '#000',
+                padding: 5,
+                hasBorders: false,
+                hasControls: false
+            });
+            c.line = line;
+            return c;
+        }
+
+        /**
+         * Canvas-Funktion:
+         * Wenn ein Object auf der Canvas bewegt wird, triggert diese Funktion
+         * konkret:
+         *      - Wenn ein Kreuzungs-Knoten auf der Canvas bewegt wird, werden seine umliegenden
+         *        Linien daran angepasst.
+         *      - Wenn ein Mittel-Knoten auf der Canvas bewegt wird, wird nur die einen Linie,
+         *        auf der er "sitzt" angepasst.
+         * Attribute:
+         *      e: Object
+         *          In dem Fall nur Knoten
+         */
+        function onObjectMoving(e) {
+            if (e.target.name === "m") {
+                let p = e.target;
+                if (p.line) {
+                    p.line.path[1][1] = p.left;
+                    p.line.path[1][2] = p.top;
+                }
+            } else if (e.target.name === "k") {
+                let p = e.target;
+                if (p.lineLeft && p.lineRight && p.lineUp && p.lineDown) {
+                    p.lineLeft.path[1][3] = p.left;
+                    p.lineLeft.path[1][4] = p.top;
+                    p.lineUp.path[1][3] = p.left;
+                    p.lineUp.path[1][4] = p.top;
+
+                    p.lineRight.path[0][1] = p.left;
+                    p.lineRight.path[0][2] = p.top;
+                    p.lineDown.path[0][1] = p.left;
+                    p.lineDown.path[0][2] = p.top;
+                }
+            }
+        }
+    })();
+
+    /**
+     * Schaltet zwischen sichtbaren und unsichtbaren horizontalen Linien um
+     *  Opacity wird auf 0/1 gesetzt.
+     */
+    function toggleHorizontal() {
+        let checkBox = document.getElementById("horizontal");
+        if (checkBox.checked === true) {
+            for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
+                for(let y = 0 ; y < amountOfHorizontalLines; y++){
+                    let nodeElement = horizontalNodes[x][y];
+                    nodeElement.selectable = false;
+                    nodeElement.animate('opacity', '0', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid),
+                    });
+                    horizontalLines[x][y].animate('opacity', '0', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid),
+                    });
+                }
+            }
+        }else{
+            for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
+                for(let y = 0 ; y < amountOfHorizontalLines; y++){
+                    let nodeElement = horizontalNodes[x][y];
+                    nodeElement.selectable = true;
+                    nodeElement.animate('opacity', '1', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid),
+                    });
+                    horizontalLines[x][y].animate('opacity', '1', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid)
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * Schaltet zwischen sichtbaren und unsichtbaren verticalen Linien um
+     *  Opacity wird auf 0/1 gesetzt.
+     */
+    function toggleVertical() {
+        let checkBox = document.getElementById("vertical");
+        if (checkBox.checked === true) {
+            for(let x = 0 ; x < amountOfVerticalLines; x++) {
+                for(let y = 0 ; y < amountOfHorizontalLines+1; y++){
+                    let nodeElement = verticalNodes[x][y];
+                    nodeElement.selectable = false;
+                    nodeElement.animate('opacity', '0', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid),
+                    });
+                    verticalLines[x][y].animate('opacity', '0', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid),
+                    });
+                }
+            }
+        }else{
+            for(let x = 0 ; x < amountOfVerticalLines; x++) {
+                for (let y = 0; y < amountOfHorizontalLines+1; y++) {
+                    let nodeElement = verticalNodes[x][y];
+                    nodeElement.selectable = true;
+                    nodeElement.animate('opacity', '1', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid),
+                    });
+                    verticalLines[x][y].animate('opacity', '1', {
+                        duration: 0,
+                        onChange: canvasGrid.renderAll.bind(canvasGrid),
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * Gibt ein Array mit:
+     *  [0]: Liste aller vertikalen Nodes die bewegt wurden
+     *  [1]: Liste aller horizontalen Nodes die bewegt wurden
+     *  [2]: Liste aller kreuzungs-Knoten/nodes die bewegt wurden
+     *  [3]: essentielle Informationen über das Grid und die Canvas
+     *
+     *  !!! Die Knoten in den Listen sind keine fabric.js-Objecte mehr sondern eine sehr abgespeckte Version !!!
+     *  Die Knoten/Nodes in den jeweiligen Listen haben folgenden Aufbau:
+     *      .x = Index im Original-Array
+     *      .y = Index im Original-Array
+     *      .top = Abstand von oben
+     *      .left = Abstand von links
+     *
+     *  [3][0]: Canvas-Grid-Breite
+     *  [3][1]: Canvas-Grid-Hoehe
+     *  [3][2]: Anzahl der verticalen Nodes
+     *  [3][3]: Anzahl der horizontalen Nodes
+     */
+    function returnAmslerGrid() {
+        let vertNodes = [];
+        let horiNodes = [];
+        let normNodes = [];
+        //INFORMATION DES ARRAYS SPEICHERN!
+        for(let x = 1; x <= amountOfVerticalLines+1; x++){
+            for(let y = 1; y <= amountOfHorizontalLines+1; y++){
+                if(x < amountOfVerticalLines+1){
+                    let node = verticalNodes[x-1][y-1];
+                    // wenn das Node von seiner Initial-Position bewegt wurde
+                    if(node.left % (x * widthScale) !== 0 || node.top % ((y * heightScale + (heightScale / 2)) - heightScale) !== 0){
+                        let saveNode = {};
+                        saveNode.x = x-1;
+                        saveNode.y = y-1;
+                        saveNode.top = node.top;
+                        saveNode.left = node.left;
+                        vertNodes.push(saveNode);
+                    }
+                    if(y < amountOfHorizontalLines+1){
+                        node = horizontalNodes[x-1][y-1];
+                        // wenn das Node von seiner Initial-Position bewegt wurde
+                        if((node.left % (x * widthScale + (widthScale / 2) - widthScale) !== 0 || node.top % (y * heightScale) !== 0)){
+                            let saveNode = {};
+                            saveNode.x = x-1;
+                            saveNode.y = y-1;
+                            saveNode.top = node.top;
+                            saveNode.left = node.left;
+                            horiNodes.push(saveNode);
+                        }
+                        node = normalNodes[x-1][y-1];
+                        // wenn das Node von seiner Initial-Position bewegt wurde
+                        if(node.left % (x * widthScale) !== 0 || node.top % (y * heightScale) !== 0 ){
+                            let saveNode = {};
+                            saveNode.x = x-1;
+                            saveNode.y = y-1;
+                            saveNode.top = node.top;
+                            saveNode.left = node.left;
+                            normNodes.push(saveNode);
+                        }
+                    }
+                }else {
+                    if(y < amountOfHorizontalLines+1){
+                        let node = horizontalNodes[x-1][y-1];
+                        if((node.left % (x * widthScale + (widthScale / 2) - widthScale) !== 0 || node.top % (y * heightScale) !== 0)){
+                            let saveNode = {};
+                            saveNode.x = x-1;
+                            saveNode.y = y-1;
+                            saveNode.top = node.top;
+                            saveNode.left = node.left;
+                            horiNodes.push(saveNode);
+                        }
+                    }
+                }
+            }
+        }
+        let canvasStats = [4];
+        canvasStats[0] = canvasGrid.width;
+        canvasStats[1] = canvasGrid.height;
+        canvasStats[2] = amountOfVerticalLines;
+        canvasStats[3] = amountOfHorizontalLines;
+        let changes = [];
+        changes.push([vertNodes, horiNodes, normNodes, canvasStats]);
+        console.log(changes);
+
+        /** Post zum server */
+
+        //return changes;
+    }
+
+
+    /**
+     * Expirtiert die Grid-Canvas als PNG
+     */
+    function exportCanvasAsPNG() {
+
+        var canvasElement = document.getElementById('grid');
+
+        var MIME_TYPE = "image/png";
+
+        var imgURL = canvasElement.toDataURL(MIME_TYPE);
+
+        /** post zum Server */
+
+        /*
+        var dlLink = document.createElement('a');
+        dlLink.download = "fileName";
+        dlLink.href = imgURL;
+        dlLink.dataset.downloadurl = [MIME_TYPE, dlLink.download, dlLink.href].join(':');
+
+        document.body.appendChild(dlLink);
+        dlLink.click();
+        document.body.removeChild(dlLink);
+         */
+    }
+
+    /**
+     * Quelle: https://thanish.me/fabricjs-performance-hack-d76b0fa6b3ad
+     */
+    let isRendering = false;
+    let isAnimating = false;
+
+    const render = canvasGrid.renderAll.bind(canvasGrid);
+    const stop = () => isAnimating = false;
+    const play = () => {
+        isAnimating = true;
+        canvasGrid.renderAll();
+    };
+    /**
+     * Override der renderAll()-Methode
+     * Angepasst an viele zu rendernde Objekte (siehe creatAmslerGrid())
+     */
+    canvasGrid.renderAll = () => {
+        if (!isRendering) {
+            isRendering = true;
+            requestAnimationFrame(() => {
+                render();
+                isRendering = false;
+                if (isAnimating) {
+                    canvasGrid.renderAll();
+                }
+            });
+        }
+    };
+
+    // M1 1C17.6667 1 34.3333 1 51 1
+    // https://www.youtube.com/watch?time_continue=70&v=LbV_2Xn9TX4
+
+    // kreis                xx
+    // input größe ändern   !!
+    // fixe punkte          !!
+    // bild png             !!
+    // doku                 xx
+    //      struktur
+    //      problem...
+    // 16:9                 !!
+    // load
+    // spiegeln             ?? -informieren
+    //
+</script>
+</body>
+</html>
