@@ -10,7 +10,7 @@
 <label for="vertical">Vertikal: </label><input type="checkbox" id="vertical" onclick="toggleVertical()">
 <input type="button" id="return" onclick="returnAmslerGrid()" value="Output As Array">
 <input type="button" id="print" onclick="exportCanvasAsPNG()" value="Download As PNG">
-<canvas id="grid" width="720" height="450"></canvas>
+<canvas id="grid" width="300" height="300"></canvas>
 <script>
     /**
      * Canvas-Variable für das Grid:
@@ -28,9 +28,9 @@
     fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
 
     /** Anzahl der horizotalen Linien */
-    let amountOfHorizontalLines = 9;
+    let amountOfHorizontalLines = 5;
     /** Anzahl der vertikalen Linien */
-    let amountOfVerticalLines = 16;
+    let amountOfVerticalLines = 5;
 
     /**
      * Horizontaler Faktor für den Abstand der vertikalen Linien
