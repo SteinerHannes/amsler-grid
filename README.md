@@ -24,3 +24,9 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 ## Weitere Entwicklung:
 - [ ] Amsler-Gitter aus gespeicherten Daten wiederherstellen
 - [ ] Kästchen in Amsler-Gitter markieren
+
+## Getestete Browser:
+- [x] Chrome/Chromium
+- [ ] Firefox
+- [x] Safari
+- [ ] Edge
