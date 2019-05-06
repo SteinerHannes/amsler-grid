@@ -21,7 +21,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
     let amountOfHorizontalLines = 9;
     let amountOfVerticalLines = 16;
 ```
-* Horizontale und vertikale Linien können separat unsichtbar gemacht werden
+* Horizontale und vertikale Linien können über die zwei Tick-Boxen separat unsichtbar gemacht werden 
 
 ## Weitere Entwicklung:
 - [ ] Amsler-Gitter aus gespeicherten Daten wiederherstellen
