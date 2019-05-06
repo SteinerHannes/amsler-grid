@@ -7,6 +7,8 @@ Jede horizontale und vertikale Linie besteht aus vielen in Reihe verbundene [Bé
 Jede dieser (quadratischen) Bézierkurve besteht aus einem Start- und einem Endpunkt, sowie einem Mittelpunkt. Mit Hilfe dieser Punkte lässt sich die Krümmung der Kurve verändern. 
 An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung verändert werden kann. Ein weiterer Knoten befindet sich auf dem Mittelpunkt jeder Bézierkurve, womit sich diese noch feiner justieren lassen. 
 
+**Sonstige Hinweise stehen im Quellcode!**
+
 ![Amsler-Grid](grid.png)
 
 ## Besonderheit:
