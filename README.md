@@ -37,7 +37,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 * Horizontale und vertikale Linien können über die zwei Tick-Boxen separat unsichtbar gemacht werden 
 
 ## Schnittstellen:
-* ```returnAmslerGrid()``` Gibt ein Array mit allen Veränderten Knoten zurück (POST zum Server muss implementiert werden!)
+* ```returnAmslerGrid()``` Gibt ein Array mit allen Veränderten Knoten zurück.   *(POST zum Server muss implementiert werden!)*
 ```javascript
     let array = returnAmslerGrid();
     array[0];       //Liste aller vertikalen Nodes die bewegt wurden
@@ -49,7 +49,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
     array[3][3];    // Anzahl der horizontalen Nodes
 ```
 
-* ```exportCanvasAsPNG()``` Exportiert die aktuelle Canvas ohne die Knoten als .png (POST zum Server muss implementiert werden! Momentan direkter Download des Bildes.)
+* ```exportCanvasAsPNG()``` Exportiert die aktuelle Canvas ohne die Knoten als .png.   *(POST zum Server muss implementiert werden! Momentan direkter Download des Bildes.)*
 
 * ```toggleVertical()``` und ```toggleHorizontal()``` sind zwei Methoden die mit Hilfe von Check-Boxen die vertikalen oder horizontalen Linien unsichtbar machen. 
 
