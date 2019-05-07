@@ -21,11 +21,46 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
     let amountOfHorizontalLines = 9;
     let amountOfVerticalLines = 16;
 ```
+* Anpassung vom Aussehen über globale Variablen
+```javascript 
+    /** Breite der Linien */
+    let linewidth = 3.5;
+    /** Groesse der Knoten-Farbe */
+    let noderadius = 5;
+    /** Groesse der Knoten (fuer Touch/Mouse-Controlls) */
+    let nodepadding = 5;
+    /** Knoten-Farbe */
+    let nodecolor = "black"; // oder '#000'
+```
+      
+
 * Horizontale und vertikale Linien können über die zwei Tick-Boxen separat unsichtbar gemacht werden 
+
+## Schnittstellen:
+* ```returnAmslerGrid()``` Gibt ein Array mit allen Veränderten Knoten zurück (POST zum Server muss implementiert werden!)
+```javascript
+    let array = returnAmslerGrid();
+    array[0];       //Liste aller vertikalen Nodes die bewegt wurden
+    array[1];       //Liste aller horizontalen Nodes die bewegt wurden
+    array[2];       //Liste aller kreuzungs-Knoten/nodes die bewegt wurden     
+    array[3][0];    // Canvas-Grid-Breite
+    array[3][1];    // Canvas-Grid-Hoehe
+    array[3][2];    // Anzahl der verticalen Nodes
+    array[3][3];    // Anzahl der horizontalen Nodes
+```
+
+* ```exportCanvasAsPNG()``` Exportiert die aktuelle Canvas ohne die Knoten als .png (POST zum Server muss implementiert werden! Momentan direkter Download des Bildes.)
+
+* ```toggleVertical()``` und ```toggleHorizontal()``` sind zwei Methoden die mit Hilfe von Check-Boxen die vertikalen oder horizontalen Linien unsichtbar machen. 
+
+
+## Verwendete Frameworks:
+* [Fabric.js](www.fabricjs.com/)
 
 ## Weitere Entwicklung:
 - [ ] Amsler-Gitter aus gespeicherten Daten wiederherstellen
 - [ ] Kästchen in Amsler-Gitter markieren
+- [ ] POST zum Server (Array, .png)
 
 ## Getestete Browser:
 - [x] Chrome/Chromium
