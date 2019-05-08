@@ -56,13 +56,14 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 * ```recreateAmslerGrid()``` Stellt ein Amsler-Gitter mit Hilfe der Daten aus ```returnAmslerGrid()``` wieder her.
 
 ## Verwendete Frameworks:
-* [Fabric.js](http://www.fabricjs.com/)
+* [Fabric.js](http://www.fabricjs.com/) ist im Repository schon drin: *```fabric.min.js```*
 
 ## Weitere Entwicklung:
 - [x] Amsler-Gitter aus gespeicherten Daten wiederherstellen
 - [ ] Sicherheits-Mechanismen einbauen
 - [ ] Kästchen in Amsler-Gitter markieren
 - [ ] POST zum Server (`array`, `.png`)
+- [ ] Knoten beim Export des Bildes ausschalten
 
 ## Getestete Browser:
 - [x] Chrome/Chromium
