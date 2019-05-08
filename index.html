@@ -10,8 +10,12 @@
 <label for="vertical">Vertikal: </label><input type="checkbox" id="vertical" onclick="toggleVertical()">
 <input type="button" id="return" onclick="returnAmslerGrid()" value="Output As Array">
 <input type="button" id="print" onclick="exportCanvasAsPNG()" value="Download As PNG">
+<input type="button" id="creat" onclick="recreateAmslerGrid()" value="Load">
 <canvas id="grid" width="1440" height="770"></canvas>
 <script>
+    /** Virable zum wiederherstellen gespeicherter Daten*/
+    let savedata;
+
     /** Breite der Linien */
     let linewidth = 3.5;
     /** Groesse der Knoten-Farbe */
@@ -30,9 +34,7 @@
      * Framework:
      *      fabric.js
      */
-    let canvasGrid = new fabric.Canvas('grid',{
-        selection: false,
-    });
+    let canvasGrid;
     // setzt die Entstehungspunkte jedes neuen Objektes in die Mitte des Objektes (Bsp. bei Kreis: Mittelpunkt ist Entstehungspunkt)
     fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
 
@@ -49,20 +51,41 @@
      *           |          |
      *  |<-     Canvas  Breite     ->|
      */
-    const widthScale = canvasGrid.width / (amountOfVerticalLines+1);
+    let widthScale;
     /** Vertikaler Faktor für den Abstand der horizontalen Linien (ähnlich wie const widthScale) */
-    const heightScale = canvasGrid.height / (amountOfHorizontalLines+1);
+    let heightScale;
+
+    /** 2D Array mit allen Bezierkurven, die von oben nach unten verlaufen */
+    let verticalLines;
+    /** 2D Array mit alle Mittel-Punkt-Knoten, die mit den verticalen Bezierkurven verknüpft sind */
+    let verticalNodes;
+    /** 2D Array mit allen Bezierkurven, die von links nach rechts verlaufen */
+    let horizontalLines;
+    /** 2D Array mit alle Mittel-Punkt-Knoten, die mit den horizontalen Bezierkurven verknüpft sind */
+    let horizontalNodes;
+    /** 2D Array mit allen Kreuzungs-Knoten */
+    let normalNodes;
+
+
 
     /**
-     * 2D Array mit allen Bezierkurven, die von oben nach unten verlaufen
-     *
+     * Annonyme-Funktion die sofort ausgeführt wird, nachdem sie erstellt wurde.
      */
-    let verticalLines = [amountOfVerticalLines];
-    /** 2D Array mit alle Mittel-Punkt-Knoten, die mit den verticalen Bezierkurven verknüpft sind */
-    let verticalNodes = [amountOfVerticalLines];
-    let horizontalLines = [amountOfVerticalLines+1];
-    let horizontalNodes = [amountOfVerticalLines+1];
-    let normalNodes = [amountOfVerticalLines];
+    (function () {
+        canvasGrid =  new fabric.Canvas('grid',{
+            selection: false,
+        });
+        // Events, die auf dem Grid stattfinden ('<Event-Name>': <Funktions-Name>)
+        canvasGrid.on({
+            'object:moving': onObjectMoving
+        });
+        // setzt den Mittelpunkt
+        addMiddelPoint();
+        // ueberschreibt die aktuellen globalen Variablen
+        setGlobalVariables(16, 9);
+        // erstellt das dynamische Grid an Hand der Globalen Variablen
+        creatAmslerGrid();
+    })();
 
     /**
      * Mittelpunkt auf Canvas hinzufügen:
@@ -82,261 +105,247 @@
      * Framework:
      *      fabric.js
      */
-    canvasGrid.add(new fabric.Circle({
-        radius: (Math.min(canvasGrid.width,canvasGrid.height)/Math.min(amountOfVerticalLines,amountOfHorizontalLines))/6,
-        left: canvasGrid.width/2,
-        top: canvasGrid.height/2,
-        fill: 'black',
-        selectable: false,
-        evented: false
-    }));
+    function addMiddelPoint(){
+        canvasGrid.add(new fabric.Circle({
+            radius: (Math.min(canvasGrid.width,canvasGrid.height)/Math.min(amountOfVerticalLines,amountOfHorizontalLines))/8,
+            left: canvasGrid.width/2,
+            top: canvasGrid.height/2,
+            fill: 'black',
+            selectable: false,
+            evented: false
+        }));
+    }
+
 
     /**
-     * Grid-Funktionen:
-     *      creatAmslerGrid()
-     *      makeLine()
-     *      makeNode()
-     *      makeMiddleNode()
-     *      onObjectMoving()
+     * Erstellt das inteaktive Grid auf der Canvas
+     * zu erst werden die vertikalen Linien mit ihren Mittel-Nodes erstellt,
+     * anschliessend die horizontalen Linien mit ihren Mittel-Nodes.
+     * Sind alle Linien erstlellt werden die Kreuzungs-Knoten erstellt und die anliegenden Linien uebergeben.
+     *
+     * Middel-Node-Name:
+     *  n.name = 'm'
+     * Kreuzungs-Node-Name:
+     *  n.name = 'k'
+     *
+     *  !!! Die Namen werden beim Bewegen der Nodes benötigt - siehe onObjectMoving(e) !!!
      */
-    (function () {
-        // Events, die auf dem Grid stattfinden ('<Event-Name>': <Funktions-Name>)
-        canvasGrid.on({
-            'object:moving': onObjectMoving
+    function creatAmslerGrid() {
+        // Optimierung fuer das Rendern vieler Objecte auf einmal
+        canvasGrid.renderOnAddRemove = false;
+        for (let x = 1; x <= amountOfVerticalLines; x++) {
+            verticalLines[x-1] = [amountOfHorizontalLines+1];
+            verticalNodes[x-1] = [amountOfHorizontalLines+1];
+            for (let y = 1; y <= amountOfHorizontalLines+1; y++) {
+                let line = makeLine();
+                // Bezierkurven-Start-Punkt setzen
+                line.path[0][1] = (x * widthScale);
+                line.path[0][2] = (y * heightScale) - heightScale;
+                // Bezierkurven-Mittel-Punkt setzen
+                line.path[1][1] = (x * widthScale);
+                line.path[1][2] = (y * heightScale + (heightScale / 2)) - heightScale;
+                // Bezierkurven-End-Punkt setzen
+                line.path[1][3] = (x * widthScale);
+                line.path[1][4] = (y * heightScale);
+                verticalLines[x-1][y-1] = line;
+                canvasGrid.add(line);
+                let middelNode = makeMiddelNode((x * widthScale), ((y * heightScale + (heightScale / 2)) - heightScale), line);
+                middelNode.name = "m";
+                verticalNodes[x-1][y-1] = middelNode;
+                canvasGrid.add(middelNode);
+            }
+        }
+
+        for (let x = 1; x <= amountOfVerticalLines+1; x++) {
+            horizontalLines[x-1] = [amountOfHorizontalLines];
+            horizontalNodes[x-1] = [amountOfHorizontalLines];
+            for (let y = 1; y <= amountOfHorizontalLines; y++) {
+                let line = makeLine();
+                // Bezierkurven-Start-Punkt setzen
+                line.path[0][1] = (x * widthScale) - widthScale;
+                line.path[0][2] = (y * heightScale);
+                // Bezierkurven-Mittel-Punkt setzen
+                line.path[1][1] = (x * widthScale + (widthScale / 2)) - widthScale;
+                line.path[1][2] = (y * heightScale);
+                // Bezierkurven-End-Punkt setzen
+                line.path[1][3] = (x * widthScale);
+                line.path[1][4] = (y * heightScale);
+                horizontalLines[x-1][y-1] = line;
+                canvasGrid.add(line);
+                let middelNode = makeMiddelNode((x * widthScale + (widthScale / 2) - widthScale), (y * heightScale), line);
+                middelNode.name = "m";
+                horizontalNodes[x-1][y-1] = middelNode;
+                canvasGrid.add(middelNode);
+            }
+        }
+
+        for (let x = 1; x <= amountOfVerticalLines; x++) {
+            normalNodes[x-1] =  [amountOfHorizontalLines];
+            for (let y = 1; y <= amountOfHorizontalLines; y++) {
+                // Kreuzungs-Node mit den anliegenden Linien erstellen
+                let node = makeNode((x * widthScale), (y * heightScale), horizontalLines[x-1][y-1], horizontalLines[x][y-1], verticalLines[x-1][y-1], verticalLines[x-1][y]);
+                node.name = 'k';
+                normalNodes[x-1][y-1] = node;
+                canvasGrid.add(node);
+            }
+        }
+        canvasGrid.renderOnAddRemove = true;
+    }
+
+    /**
+     * Gibt eine Linie als Bezierkurve zurück
+     * Attribute/Parameter:
+     *  'M 0 0 Q': Template für eine Bezierkurven
+     *      M 0 0 = Move zu den Koordinaten [0,0],
+     *      Q = erstelle nun Quadratische Bezier Kurve (ohne weitere Variablen)
+     *      https://www.w3schools.com/graphics/svg_path.asp
+     *  stroke: schwarz
+     *      Farbe der Linie (nicht fill!)
+     *  objectCaching: false
+     *      Objekt wird nun nicht nocheinmal zwischen gespeichert (Performance)
+     *  strokeWidth: 2.5
+     *      Liniendicke
+     *  hasBorders: false
+     *      Wenn es markiert wurde erscheinet kein Rahmen
+     *  hasControls: false
+     *      Wenn es markeirt wurde erscheinen keine spezialen Regler zum verändern
+     */
+    function makeLine() {
+        return new fabric.Path('M 0 0 Q', {
+            stroke: 'black',
+            fill: '',
+            objectCaching: false,
+            strokeWidth: linewidth,
+            hasBorders: false,
+            hasControls: false
         });
-        // erstellt das dynamische Grid an Hand der Globalen Variablen
-        creatAmslerGrid();
+    }
 
-        /**
-         * Erstellt das inteaktive Grid auf der Canvas
-         * zu erst werden die vertikalen Linien mit ihren Mittel-Nodes erstellt,
-         * anschliessend die horizontalen Linien mit ihren Mittel-Nodes.
-         * Sind alle Linien erstlellt werden die Kreuzungs-Knoten erstellt und die anliegenden Linien uebergeben.
-         *
-         * Middel-Node-Name:
-         *  n.name = 'm'
-         * Kreuzungs-Node-Name:
-         *  n.name = 'k'
-         *
-         *  !!! Die Namen werden beim Bewegen der Nodes benötigt - siehe onObjectMoving(e) !!!
-         */
-        function creatAmslerGrid() {
-            // Optimierung fuer das Rendern vieler Objecte auf einmal
-            canvasGrid.renderOnAddRemove = false;
-            for (let x = 1; x <= amountOfVerticalLines; x++) {
-                verticalLines[x-1] = [amountOfHorizontalLines+1];
-                verticalNodes[x-1] = [amountOfHorizontalLines+1];
-                for (let y = 1; y <= amountOfHorizontalLines+1; y++) {
-                    let line = makeLine();
-                    // Bezierkurven-Start-Punkt setzen
-                    line.path[0][1] = (x * widthScale);
-                    line.path[0][2] = (y * heightScale) - heightScale;
-                    // Bezierkurven-Mittel-Punkt setzen
-                    line.path[1][1] = (x * widthScale);
-                    line.path[1][2] = (y * heightScale + (heightScale / 2)) - heightScale;
-                    // Bezierkurven-End-Punkt setzen
-                    line.path[1][3] = (x * widthScale);
-                    line.path[1][4] = (y * heightScale);
-                    verticalLines[x-1][y-1] = line;
-                    canvasGrid.add(line);
-                    let middelNode = makeMiddelNode((x * widthScale), ((y * heightScale + (heightScale / 2)) - heightScale), line);
-                    middelNode.name = "m";
-                    verticalNodes[x-1][y-1] = middelNode;
-                    canvasGrid.add(middelNode);
-                }
+    /**
+     * Erstellt ein Kreuzungs-Knoten
+     * Attribute/Parameter:
+     *      left: uebergebener Wert
+     *          Abstand von Links
+     *      top: übergebener Wert
+     *          Abstand von Oben
+     *      lineLeft: uebergebene Linie
+     *          ist die in den Knoten von links eingehende Linie
+     *      lineRight, lineUp, lineDown
+     *          siehe oben lineLeft (selbes Prinzip)
+     *          werden benötigt um die richtigen Linien beim Bewegen des Knotens zu verändern/bewegen
+     *      strokeWidth: 1
+     *          Liniendicke
+     *      radius: 1
+     *      fill: schwarz
+     *          Flächenfarbe
+     *      stroke: schwarz
+     *          Randfarbe
+     *      padding: 5
+     *          Abstand um den Kreis drumherum, wo die Mouse-Controlls wirksam werden können
+     *          d.h. es ist einfacher einen Kreis auszuwaehlen und zu bewegen
+     *      hasBorders: false
+     *          Wenn er markiert wurde erscheint kein Rahmen
+     *      hasControls: false
+     *          Wenn er markeirt wurde erscheinen keine spezialen Regler zum verändern,
+     *          die Möglichkeit des Bewegens bleibt aber!
+     * Framework:
+     *      farbric.js
+     */
+    function makeNode(left, top, lineLeft, lineRight, lineUp, lineDown) {
+        const c = new fabric.Circle({
+            left: left,
+            top: top,
+            strokeWidth: 1,
+            radius: noderadius,
+            fill: nodecolor,
+            stroke: nodecolor,
+            padding: nodepadding,
+            hasBorders: false,
+            hasControls: false
+        });
+        c.lineLeft = lineLeft;
+        c.lineRight = lineRight;
+        c.lineUp = lineUp;
+        c.lineDown = lineDown;
+        return c;
+    }
+
+    /**
+     * Erstellt ein Knoten der auf/in der Mitte einer Linie ist
+     * Attribute/Parameter:
+     *      left: uebergebener Wert
+     *          Abstand von Links
+     *      top: übergebener Wert
+     *          Abstand von Oben
+     *      line: uebergebene Linie
+     *          Ist die Linie, auf der dieser Knoten in der Mitte sitzt
+     *          Wird benoetigt, um die richitge Linie beim bewegen des Knotens anzusteuern
+     *      strokeWidth: 1
+     *          Liniendicke
+     *      radius: 2
+     *      fill: schwarz
+     *          Flächenfarbe
+     *      stroke: schwarz
+     *          Randfarbe
+     *      padding: 5
+     *          Abstand um den Kreis drumherum, wo die Mouse-Controlls wirksam werden können
+     *          d.h. es ist einfacher einen Kreis auszuwaehlen und zu bewegen
+     *      hasBorders: false
+     *          Wenn er markiert wurde erscheint kein Rahmen
+     *      hasControls: false
+     *          Wenn er markeirt wurde erscheinen keine spezialen Regler zum verändern,
+     *          die Möglichkeit des Bewegens bleibt aber!
+     */
+    function makeMiddelNode(left, top, line) {
+        let c = new fabric.Circle({
+            left: left,
+            top: top,
+            strokeWidth: 1,
+            radius: noderadius,
+            fill: nodecolor,
+            stroke: nodecolor,
+            padding: nodepadding,
+            hasBorders: false,
+            hasControls: false
+        });
+        c.line = line;
+        return c;
+    }
+
+    /**
+     * Canvas-Funktion:
+     * Wenn ein Object auf der Canvas bewegt wird, triggert diese Funktion
+     * konkret:
+     *      - Wenn ein Kreuzungs-Knoten auf der Canvas bewegt wird, werden seine umliegenden
+     *        Linien daran angepasst.
+     *      - Wenn ein Mittel-Knoten auf der Canvas bewegt wird, wird nur die einen Linie,
+     *        auf der er "sitzt" angepasst.
+     * Attribute:
+     *      e: Object
+     *          In dem Fall nur Knoten
+     */
+    function onObjectMoving(e) {
+        if (e.target.name === "m") {
+            let p = e.target;
+            if (p.line) {
+                p.line.path[1][1] = p.left;
+                p.line.path[1][2] = p.top;
             }
+        } else if (e.target.name === "k") {
+            let p = e.target;
+            if (p.lineLeft && p.lineRight && p.lineUp && p.lineDown) {
+                p.lineLeft.path[1][3] = p.left;
+                p.lineLeft.path[1][4] = p.top;
+                p.lineUp.path[1][3] = p.left;
+                p.lineUp.path[1][4] = p.top;
 
-            for (let x = 1; x <= amountOfVerticalLines+1; x++) {
-                horizontalLines[x-1] = [amountOfHorizontalLines];
-                horizontalNodes[x-1] = [amountOfHorizontalLines];
-                for (let y = 1; y <= amountOfHorizontalLines; y++) {
-                    let line = makeLine();
-                    // Bezierkurven-Start-Punkt setzen
-                    line.path[0][1] = (x * widthScale) - widthScale;
-                    line.path[0][2] = (y * heightScale);
-                    // Bezierkurven-Mittel-Punkt setzen
-                    line.path[1][1] = (x * widthScale + (widthScale / 2)) - widthScale;
-                    line.path[1][2] = (y * heightScale);
-                    // Bezierkurven-End-Punkt setzen
-                    line.path[1][3] = (x * widthScale);
-                    line.path[1][4] = (y * heightScale);
-                    horizontalLines[x-1][y-1] = line;
-                    canvasGrid.add(line);
-                    let middelNode = makeMiddelNode((x * widthScale + (widthScale / 2) - widthScale), (y * heightScale), line);
-                    middelNode.name = "m";
-                    horizontalNodes[x-1][y-1] = middelNode;
-                    canvasGrid.add(middelNode);
-                }
-            }
-
-            for (let x = 1; x <= amountOfVerticalLines; x++) {
-                normalNodes[x-1] =  [amountOfHorizontalLines];
-                for (let y = 1; y <= amountOfHorizontalLines; y++) {
-                    // Kreuzungs-Node mit den anliegenden Linien erstellen
-                    let node = makeNode((x * widthScale), (y * heightScale), horizontalLines[x-1][y-1], horizontalLines[x][y-1], verticalLines[x-1][y-1], verticalLines[x-1][y]);
-                    node.name = 'k';
-                    normalNodes[x-1][y-1] = node;
-                    canvasGrid.add(node);
-                }
-            }
-            canvasGrid.renderOnAddRemove = true;
-        }
-
-        /**
-         * Gibt eine Linie als Bezierkurve zurück
-         * Attribute/Parameter:
-         *  'M 0 0 Q': Template für eine Bezierkurven
-         *      M 0 0 = Move zu den Koordinaten [0,0],
-         *      Q = erstelle nun Quadratische Bezier Kurve (ohne weitere Variablen)
-         *      https://www.w3schools.com/graphics/svg_path.asp
-         *  stroke: schwarz
-         *      Farbe der Linie (nicht fill!)
-         *  objectCaching: false
-         *      Objekt wird nun nicht nocheinmal zwischen gespeichert (Performance)
-         *  strokeWidth: 2.5
-         *      Liniendicke
-         *  hasBorders: false
-         *      Wenn es markiert wurde erscheinet kein Rahmen
-         *  hasControls: false
-         *      Wenn es markeirt wurde erscheinen keine spezialen Regler zum verändern
-         */
-        function makeLine() {
-            return new fabric.Path('M 0 0 Q', {
-                stroke: 'black',
-                fill: '',
-                objectCaching: false,
-                strokeWidth: linewidth,
-                hasBorders: false,
-                hasControls: false
-            });
-        }
-
-        /**
-         * Erstellt ein Kreuzungs-Knoten
-         * Attribute/Parameter:
-         *      left: uebergebener Wert
-         *          Abstand von Links
-         *      top: übergebener Wert
-         *          Abstand von Oben
-         *      lineLeft: uebergebene Linie
-         *          ist die in den Knoten von links eingehende Linie
-         *      lineRight, lineUp, lineDown
-         *          siehe oben lineLeft (selbes Prinzip)
-         *          werden benötigt um die richtigen Linien beim Bewegen des Knotens zu verändern/bewegen
-         *      strokeWidth: 1
-         *          Liniendicke
-         *      radius: 1
-         *      fill: schwarz
-         *          Flächenfarbe
-         *      stroke: schwarz
-         *          Randfarbe
-         *      padding: 5
-         *          Abstand um den Kreis drumherum, wo die Mouse-Controlls wirksam werden können
-         *          d.h. es ist einfacher einen Kreis auszuwaehlen und zu bewegen
-         *      hasBorders: false
-         *          Wenn er markiert wurde erscheint kein Rahmen
-         *      hasControls: false
-         *          Wenn er markeirt wurde erscheinen keine spezialen Regler zum verändern,
-         *          die Möglichkeit des Bewegens bleibt aber!
-         * Framework:
-         *      farbric.js
-         */
-        function makeNode(left, top, lineLeft, lineRight, lineUp, lineDown) {
-            const c = new fabric.Circle({
-                left: left,
-                top: top,
-                strokeWidth: 1,
-                radius: noderadius,
-                fill: nodecolor,
-                stroke: nodecolor,
-                padding: nodepadding,
-                hasBorders: false,
-                hasControls: false
-            });
-            c.lineLeft = lineLeft;
-            c.lineRight = lineRight;
-            c.lineUp = lineUp;
-            c.lineDown = lineDown;
-            return c;
-        }
-
-        /**
-         * Erstellt ein Knoten der auf/in der Mitte einer Linie ist
-         * Attribute/Parameter:
-         *      left: uebergebener Wert
-         *          Abstand von Links
-         *      top: übergebener Wert
-         *          Abstand von Oben
-         *      line: uebergebene Linie
-         *          Ist die Linie, auf der dieser Knoten in der Mitte sitzt
-         *          Wird benoetigt, um die richitge Linie beim bewegen des Knotens anzusteuern
-         *      strokeWidth: 1
-         *          Liniendicke
-         *      radius: 2
-         *      fill: schwarz
-         *          Flächenfarbe
-         *      stroke: schwarz
-         *          Randfarbe
-         *      padding: 5
-         *          Abstand um den Kreis drumherum, wo die Mouse-Controlls wirksam werden können
-         *          d.h. es ist einfacher einen Kreis auszuwaehlen und zu bewegen
-         *      hasBorders: false
-         *          Wenn er markiert wurde erscheint kein Rahmen
-         *      hasControls: false
-         *          Wenn er markeirt wurde erscheinen keine spezialen Regler zum verändern,
-         *          die Möglichkeit des Bewegens bleibt aber!
-         */
-        function makeMiddelNode(left, top, line) {
-            let c = new fabric.Circle({
-                left: left,
-                top: top,
-                strokeWidth: 1,
-                radius: noderadius,
-                fill: nodecolor,
-                stroke: nodecolor,
-                padding: nodepadding,
-                hasBorders: false,
-                hasControls: false
-            });
-            c.line = line;
-            return c;
-        }
-
-        /**
-         * Canvas-Funktion:
-         * Wenn ein Object auf der Canvas bewegt wird, triggert diese Funktion
-         * konkret:
-         *      - Wenn ein Kreuzungs-Knoten auf der Canvas bewegt wird, werden seine umliegenden
-         *        Linien daran angepasst.
-         *      - Wenn ein Mittel-Knoten auf der Canvas bewegt wird, wird nur die einen Linie,
-         *        auf der er "sitzt" angepasst.
-         * Attribute:
-         *      e: Object
-         *          In dem Fall nur Knoten
-         */
-        function onObjectMoving(e) {
-            if (e.target.name === "m") {
-                let p = e.target;
-                if (p.line) {
-                    p.line.path[1][1] = p.left;
-                    p.line.path[1][2] = p.top;
-                }
-            } else if (e.target.name === "k") {
-                let p = e.target;
-                if (p.lineLeft && p.lineRight && p.lineUp && p.lineDown) {
-                    p.lineLeft.path[1][3] = p.left;
-                    p.lineLeft.path[1][4] = p.top;
-                    p.lineUp.path[1][3] = p.left;
-                    p.lineUp.path[1][4] = p.top;
-
-                    p.lineRight.path[0][1] = p.left;
-                    p.lineRight.path[0][2] = p.top;
-                    p.lineDown.path[0][1] = p.left;
-                    p.lineDown.path[0][2] = p.top;
-                }
+                p.lineRight.path[0][1] = p.left;
+                p.lineRight.path[0][2] = p.top;
+                p.lineDown.path[0][1] = p.left;
+                p.lineDown.path[0][2] = p.top;
             }
         }
-    })();
+    }
 
     /**
      * Schaltet zwischen sichtbaren und unsichtbaren horizontalen Linien um
@@ -496,13 +505,113 @@
         canvasStats[2] = amountOfVerticalLines;
         canvasStats[3] = amountOfHorizontalLines;
         let changes = [];
-        changes.push([vertNodes, horiNodes, normNodes, canvasStats]);
+        changes.push(vertNodes, horiNodes, normNodes, canvasStats);
         console.log(changes);
 
         /** Post zum server */
-        /*
-        return changes;
-         */
+
+        savedata = changes;/** Variable zum Tetsten*/
+
+    }
+
+    /**
+     * Initialisiert alle globalen Variablen, die das Grid betreffen,
+     * an Hand der Anzahl der vertikalen und horizontalen Linien.
+     */
+    function setGlobalVariables(amountVertLines, amountHorLines) {
+        amountOfHorizontalLines = amountHorLines;
+        amountOfVerticalLines = amountVertLines;
+        verticalLines = [amountOfVerticalLines];
+        verticalNodes = [amountOfVerticalLines];
+        horizontalLines = [amountOfVerticalLines+1];
+        horizontalNodes = [amountOfVerticalLines+1];
+        normalNodes = [amountOfVerticalLines];
+        widthScale = canvasGrid.width / (amountOfVerticalLines+1);
+        heightScale = canvasGrid.height / (amountOfHorizontalLines+1);
+    }
+
+    /**
+     * Stellt ein Amsler-Gitter an Hand gespeicherter Daten wieder her.
+     * Die Daten müssen sich in der Globalen-Variable "savedData" befinden.
+     */
+    function recreateAmslerGrid(){
+        // alte Canvas leeren
+        canvasGrid.clear();
+        let savedData = savedata;
+        /* //Test Daten
+        let savedData = [
+            [
+                {x: 0, y: 0, top: 38.66666666666667, left: 115.33333333333333},
+                {x: 4, y: 5, top: 460.3333333333333, left: 377.66666666666663}
+            ],[
+                {x: 0, y: 0, top: 126.33333333333333, left: 40.66666666666667},
+                {x: 5, y: 4, top: 380.66666666666663, left: 459.3333333333333}
+            ],[
+                {x: 2, y: 2, top: 203, left: 204}
+            ],[500, 500, 5, 5]
+        ];*/
+        // Daten "entpacken"
+        let vertNodes = savedData[0];
+        let horNodes = savedData[1];
+        let normNodes = savedData[2];
+        let canvasWidth = savedData[3][0];
+        let canvasHeight = savedData[3][1];
+        let amountVL = savedData[3][2];
+        let amountHL = savedData[3][3];
+        // Wenn die Canvas und die Anzahl der Linien sich geändert haben sollten...
+        if(canvasHeight !== canvasGrid.height || canvasWidth !== canvasGrid.width || amountOfVerticalLines !== amountVL || amountOfHorizontalLines !== amountHL){
+            // Canvas-Größe anpassen
+            canvasGrid.setWidth(canvasWidth);
+            canvasGrid.setHeight(canvasHeight);
+            canvasGrid.calcOffset();
+            // Globale Variablen anpassen
+            setGlobalVariables(amountVL,amountHL);
+        }
+
+        // Mittelpunkt setzen
+        addMiddelPoint();
+        // Neues Grid erstellen
+        creatAmslerGrid(amountOfVerticalLines, amountOfHorizontalLines);
+        // Knoten (und deren Linien) so anpassen, wie sie in den gespeicherten Daten drin stehen
+        let max = vertNodes.length;
+        for(let i = 0; i < max; i++){
+            let temp = vertNodes[i];
+            let node = verticalNodes[temp.x][temp.y];
+            node.left = temp.left;
+            node.top = temp.top;
+            if (node.line) {
+                node.line.path[1][1] = node.left;
+                node.line.path[1][2] = node.top;
+            }
+        }
+        max = horNodes.length;
+        for(let i = 0; i < max; i++){
+            let temp = horNodes[i];
+            let node = horizontalNodes[temp.x][temp.y];
+            node.left = temp.left;
+            node.top = temp.top;
+            if (node.line) {
+                node.line.path[1][1] = node.left;
+                node.line.path[1][2] = node.top;
+            }
+        }
+        max = normNodes.length;
+        for(let i = 0; i < max; i++){
+            let temp = normNodes[i];
+            let node = normalNodes[temp.x][temp.y];
+            node.left = temp.left;
+            node.top = temp.top;
+            if (node.lineLeft && node.lineRight && node.lineUp && node.lineDown) {
+                node.lineLeft.path[1][3] = node.left;
+                node.lineLeft.path[1][4] = node.top;
+                node.lineUp.path[1][3] = node.left;
+                node.lineUp.path[1][4] = node.top;
+                node.lineRight.path[0][1] = node.left;
+                node.lineRight.path[0][2] = node.top;
+                node.lineDown.path[0][1] = node.left;
+                node.lineDown.path[0][2] = node.top;
+            }
+        }
     }
 
 
@@ -520,7 +629,6 @@
 
         /** post zum Server */
 
-        /*
         var dlLink = document.createElement('a');
         dlLink.download = "fileName";
         dlLink.href = imgURL;
@@ -529,8 +637,6 @@
         document.body.appendChild(dlLink);
         dlLink.click();
         document.body.removeChild(dlLink);
-         */
-
     }
 
     /**
@@ -562,21 +668,6 @@
         }
     };
 
-    // M1 1C17.6667 1 34.3333 1 51 1
-    // https://www.youtube.com/watch?time_continue=70&v=LbV_2Xn9TX4
-
-    // kreis                xx
-    // input größe ändern   !!
-    // fixe punkte          !!
-    // bild png             !!
-    // doku                 !!
-    //      struktur        !!
-    //      problem...      xx
-    // 16:9                 !!
-    // load                 xx
-    // spiegeln             ?? -informieren
-    // knotengroesse        !!
-    // glbale var           !!
 </script>
 </body>
 </html>
