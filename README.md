@@ -55,7 +55,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 
 
 ## Verwendete Frameworks:
-* [Fabric.js](https://www.fabricjs.com/)
+* [Fabric.js](http://www.fabricjs.com/)
 
 ## Weitere Entwicklung:
 - [ ] Amsler-Gitter aus gespeicherten Daten wiederherstellen
