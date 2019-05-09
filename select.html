@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<button id="export" onclick="exportData()">Export</button>
+<button id="log" onclick="logData()">Log</button>
+<canvas id="grid" width="1440" height="770"></canvas>
+</body>
+
+<script src="fabric.min.js"></script>
+<script>
+    function makeLine(coords) {
+        return new fabric.Line(coords, {
+            fill: 'black',
+            stroke: 'black',
+            strokeWidth: lineWidth,
+            selectable: false,
+            evented: false,
+        });
+    }
+
+    function makeRect(x, y) {
+        return new fabric.Rect({
+            posData: [x, y],
+            left: x * widthScale - widthScale/2,
+            top: y * heightScale - heightScale/2,
+            width: widthScale,
+            height: heightScale,
+            fill: 'transparent',
+            selectable: false,
+            hoverCursor: 'pointer'
+        })
+    }
+
+    function exportData() {
+        console.log(data);
+    }
+
+    function logData() {
+        let log = "";
+        for (const row of data) {
+            let line = "";
+            for (const bool of row) {
+                line += bool ? "1 " : "0 ";
+            }
+            line += "\n";
+            log += line
+        }
+        console.log(log);
+    }
+
+    function onClick(event) {
+        console.log(event);
+        const x = event.target.posData[0];
+        const y = event.target.posData[1];
+
+        if (event.target.fill === "transparent") {
+            event.target.fill = selectColor;
+            data[y-1][x-1] = true;
+        } else {
+            event.target.fill = "transparent";
+            data[y-1][x-1] = false;
+        }
+        event.target.dirty = true;
+    }
+
+
+    /** Anzahl der horizotalen Linien */
+    const numHorizontal = 9;
+    /** Anzahl der vertikalen Linien */
+    const numVertical = 16;
+    /**  */
+    const lineWidth = 3.5;
+    const selectColor = "red";
+
+    const canvasGrid = new fabric.Canvas('grid',{
+        selection: false,
+    });
+
+    const widthScale = canvasGrid.width / (numVertical+1);
+    const heightScale = canvasGrid.height / (numHorizontal+1);
+
+    // setzt die Entstehungspunkte jedes neuen Objektes in die Mitte des Objektes (Bsp. bei Kreis: Mittelpunkt ist Entstehungspunkt)
+    fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
+
+    canvasGrid.renderOnAddRemove = false;
+
+    let rects = [];
+    for (let x = 1; x <= numVertical+1; x++) {
+        let row = [];
+        for (let y = 1; y <= numHorizontal+1; y++) {
+            let rect = makeRect(x, y);
+            rect.on("mousedown", onClick);
+            row.push(rect);
+            canvasGrid.add(rect)
+        }
+        rects.push(row);
+    }
+
+    let data = [];
+    for (let y = 1; y <= numHorizontal+1; y++) {
+        data.push(new Array(numVertical+1).fill(false));
+    }
+
+    let verticalLines = [];
+    let horizontalLines = [];
+    for (let x = 1; x <= numVertical; x++) {
+        let l = makeLine([x*widthScale, 0, x*widthScale, canvasGrid.height]);
+        verticalLines.push(l);
+        canvasGrid.add(l);
+    }
+
+
+    for (let y = 1; y <= numHorizontal; y++) {
+        let l = makeLine([0, y*heightScale, canvasGrid.width, y*heightScale]);
+        horizontalLines.push(l);
+        canvasGrid.add(l);
+    }
+    canvasGrid.renderAll();
+    canvasGrid.renderOnAddRemove = true;
+
+
+
+</script>
+
+</html>
