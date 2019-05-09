@@ -61,7 +61,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 ## Weitere Entwicklung:
 - [x] Amsler-Gitter aus gespeicherten Daten wiederherstellen
 - [ ] Sicherheits-Mechanismen einbauen
-- [ ] Kästchen in Amsler-Gitter markieren
+- [x] Kästchen in Amsler-Gitter markieren
 - [ ] POST zum Server (`array`, `.png`)
 - [ ] Knoten beim Export des Bildes ausschalten
 
