@@ -63,7 +63,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 - [ ] Sicherheits-Mechanismen einbauen
 - [x] Kästchen in Amsler-Gitter markieren
 - [ ] POST zum Server (`array`, `.png`)
-- [ ] Knoten beim Export des Bildes ausschalten
+- [x] Knoten beim Export des Bildes ausschalten
 
 ## Getestete Browser:
 - [x] Chrome/Chromium
