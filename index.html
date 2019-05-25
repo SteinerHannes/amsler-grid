@@ -11,11 +11,24 @@
 <input type="button" id="return" onclick="returnAmslerGrid()" value="Output As Array">
 <input type="button" id="print" onclick="exportCanvasAsPNG()" value="Download As PNG">
 <input type="button" id="creat" onclick="recreateAmslerGrid()" value="Load">
-<canvas id="grid" width="1440" height="770"></canvas>
-<script>
-    /** Virable zum wiederherstellen gespeicherter Daten*/
-    let savedata;
+<input type="button" id="addCircle" onclick="addCircle()" value="Add Circle">
+<input type="button" id="addRect" onclick="addRect()" value="Add Rectangle">
+<input type="button" id="remove" onclick="removeForm()" value="Remove Selected Object">
+<input type="button" id="switch" onclick="switchLayers()" value="Switch Layers">
 
+<div style="position: relative;">
+    <div id="layerGrid" style="position: absolute; left: 0; top: 0; z-index: 1;">
+        <canvas id="grid" width="960" height="540"></canvas>
+    </div>
+    <div id="layerForms" style="position: absolute; left: 0; top: 0; z-index: 0;">
+        <canvas id="from" width="960" height="540" ></canvas>
+    </div>
+</div>
+
+<script>
+
+    /** Varible zum wiederherstellen gespeicherter Daten*/
+    let savedata;
     /** Breite der Linien */
     let linewidth = 3.5;
     /** Groesse der Knoten-Farbe */
@@ -35,6 +48,17 @@
      *      fabric.js
      */
     let canvasGrid;
+    /**
+     * Canvas-Variable für Figuren/Forms
+     * - ensteht aus dem HTML-Canvas-Element mit der id="from"
+     * Attribute:
+     *      selection: false
+     *          Verhindert das markieren von Knoten auf dem Grid
+     * Framework:
+     *      fabric.js
+     */
+    let canvasForms;
+
     // setzt die Entstehungspunkte jedes neuen Objektes in die Mitte des Objektes (Bsp. bei Kreis: Mittelpunkt ist Entstehungspunkt)
     fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
 
@@ -75,6 +99,11 @@
         canvasGrid =  new fabric.Canvas('grid',{
             selection: false,
         });
+
+        canvasForms =  new fabric.Canvas('from',{
+            selection: false,
+        });
+
         // Events, die auf dem Grid stattfinden ('<Event-Name>': <Funktions-Name>)
         canvasGrid.on({
             'object:moving': onObjectMoving
@@ -614,7 +643,6 @@
         }
     }
 
-
     /**
      * Exportiert die Grid-Canvas als PNG
      */
@@ -663,6 +691,71 @@
         });
     }
 
+
+    /**
+     * Vertauscht den z-Index der beiden Canvases bzw. eigentlich die div's der Canvases
+     * und verwirft aktive Form-Objekte (Kreis, Rechteck)
+     */
+    function switchLayers() {
+        if(document.getElementById('layerGrid').style.zIndex === "1"){
+            document.getElementById('layerGrid').style.zIndex = "0";
+            document.getElementById('layerForms').style.zIndex = "1";
+        }else{
+            canvasForms.discardActiveObject();
+            canvasForms.renderAll();
+            document.getElementById('layerForms').style.zIndex = "0";
+            document.getElementById('layerGrid').style.zIndex = "1";
+        }
+    }
+
+    /**
+     * Fügt der Forms-Canvas ein neues Kreis-Objekt hinzu
+     * Attribute:
+     *      siehe makeNode(), makeMiddleNode() oder makeMiddelPoint()
+     * Framework:
+     *      fabric.js
+     */
+    function addCircle(){
+        canvasForms.add(new fabric.Circle({
+            radius: 40,
+            left: canvasForms.width/2,
+            top: canvasForms.height/2,
+            fill: '#cccccc',
+            opacity: 0.95
+        }));
+    }
+
+    /**
+     * Fügt der Forms-Canvas ein neues Rechteck-Objekt hinzu
+     * Attribute:
+     *      siehe makeNode()
+     * Framework:
+     *      fabric.js
+     */
+    function addRect() {
+        canvasForms.add(new fabric.Rect({
+            left: canvasForms.width/2,
+            top: canvasForms.height/2,
+            fill: '#cccccc',
+            width: 50,
+            height: 50,
+            opacity: 0.95
+        }));
+    }
+
+    /**
+     * Löscht das ausgewählt Objekt von der Forms-Canvas
+     * Framewokr:
+     *      fabric.js
+     */
+    function removeForm(){
+        let activeObjects = canvasForms.getActiveObjects();
+        canvasForms.discardActiveObject()
+        if (activeObjects.length) {
+            canvasForms.remove.apply(canvasForms, activeObjects);
+        }
+    }
+
     /**
      * Quelle: https://thanish.me/fabricjs-performance-hack-d76b0fa6b3ad
      */
@@ -691,7 +784,6 @@
             });
         }
     };
-
 </script>
 </body>
 </html>
