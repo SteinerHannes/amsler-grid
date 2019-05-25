@@ -66,7 +66,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 
 ## Weitere Entwicklung:
 - [x] Amsler-Gitter aus gespeicherten Daten wiederherstellen
-- [ ] Forem sichern und wieder herstellen
+- [ ] Formen sichern und wieder herstellen
 - [ ] Sicherheits-Mechanismen einbauen
 - [x] Kästchen in Amsler-Gitter markieren
 - [ ] POST zum Server (`array`, `.png`)
