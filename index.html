@@ -11,11 +11,24 @@
 <input type="button" id="return" onclick="returnAmslerGrid()" value="Output As Array">
 <input type="button" id="print" onclick="exportCanvasAsPNG()" value="Download As PNG">
 <input type="button" id="creat" onclick="recreateAmslerGrid()" value="Load">
-<canvas id="grid" width="1440" height="770"></canvas>
-<script>
-    /** Virable zum wiederherstellen gespeicherter Daten*/
-    let savedata;
+<input type="button" id="addCircle" onclick="addCircle()" value="Add Circle">
+<input type="button" id="addRect" onclick="addRect()" value="Add Rectangle">
+<input type="button" id="remove" onclick="removeForm()" value="Remove Selected Object">
+<input type="button" id="switch" onclick="switchLayers()" value="Switch Layers">
 
+<div style="position: relative;">
+    <div id="layerGrid" style="position: absolute; left: 0; top: 0; z-index: 1;">
+        <canvas id="grid" width="960" height="540"></canvas>
+    </div>
+    <div id="layerForms" style="position: absolute; left: 0; top: 0; z-index: 0;">
+        <canvas id="from" width="960" height="540" ></canvas>
+    </div>
+</div>
+
+<script>
+
+    /** Varible zum wiederherstellen gespeicherter Daten*/
+    let savedata;
     /** Breite der Linien */
     let linewidth = 3.5;
     /** Groesse der Knoten-Farbe */
@@ -35,6 +48,17 @@
      *      fabric.js
      */
     let canvasGrid;
+    /**
+     * Canvas-Variable für Figuren/Forms
+     * - ensteht aus dem HTML-Canvas-Element mit der id="from"
+     * Attribute:
+     *      selection: false
+     *          Verhindert das markieren von Knoten auf dem Grid
+     * Framework:
+     *      fabric.js
+     */
+    let canvasForms;
+
     // setzt die Entstehungspunkte jedes neuen Objektes in die Mitte des Objektes (Bsp. bei Kreis: Mittelpunkt ist Entstehungspunkt)
     fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
 
@@ -75,6 +99,11 @@
         canvasGrid =  new fabric.Canvas('grid',{
             selection: false,
         });
+
+        canvasForms =  new fabric.Canvas('from',{
+            selection: false,
+        });
+
         // Events, die auf dem Grid stattfinden ('<Event-Name>': <Funktions-Name>)
         canvasGrid.on({
             'object:moving': onObjectMoving
@@ -132,7 +161,6 @@
      */
     function creatAmslerGrid() {
         // Optimierung fuer das Rendern vieler Objecte auf einmal
-        canvasGrid.renderOnAddRemove = false;
         for (let x = 1; x <= amountOfVerticalLines; x++) {
             verticalLines[x-1] = [amountOfHorizontalLines+1];
             verticalNodes[x-1] = [amountOfHorizontalLines+1];
@@ -180,16 +208,15 @@
         }
 
         for (let x = 1; x <= amountOfVerticalLines; x++) {
-            normalNodes[x-1] =  [amountOfHorizontalLines];
+            normalNodes[x - 1] = [amountOfHorizontalLines];
             for (let y = 1; y <= amountOfHorizontalLines; y++) {
                 // Kreuzungs-Node mit den anliegenden Linien erstellen
-                let node = makeNode((x * widthScale), (y * heightScale), horizontalLines[x-1][y-1], horizontalLines[x][y-1], verticalLines[x-1][y-1], verticalLines[x-1][y]);
+                let node = makeNode((x * widthScale), (y * heightScale), horizontalLines[x - 1][y - 1], horizontalLines[x][y - 1], verticalLines[x - 1][y - 1], verticalLines[x - 1][y]);
                 node.name = 'k';
-                normalNodes[x-1][y-1] = node;
+                normalNodes[x - 1][y - 1] = node;
                 canvasGrid.add(node);
             }
         }
-        canvasGrid.renderOnAddRemove = true;
     }
 
     /**
@@ -261,7 +288,8 @@
             stroke: nodecolor,
             padding: nodepadding,
             hasBorders: false,
-            hasControls: false
+            hasControls: false,
+            objectCaching: false
         });
         c.lineLeft = lineLeft;
         c.lineRight = lineRight;
@@ -306,7 +334,8 @@
             stroke: nodecolor,
             padding: nodepadding,
             hasBorders: false,
-            hasControls: false
+            hasControls: false,
+            objectCaching: false
         });
         c.line = line;
         return c;
@@ -614,29 +643,117 @@
         }
     }
 
-
     /**
      * Exportiert die Grid-Canvas als PNG
      */
     function exportCanvasAsPNG() {
-        /** knoten aus schalten */
+        let node;
+        for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
+            for (let y = 0; y < amountOfHorizontalLines+1; y++) {
+                node = horizontalNodes[Math.min(x,amountOfVerticalLines)][Math.min(y,amountOfHorizontalLines-1)];
+                node.opacity = 0;
+                node = verticalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines)];
+                node.opacity = 0;
+                node = normalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines-1)];
+                node.opacity = 0;
+            }
+        }
+        node.animate('opacity', '0', {
+            duration: 0,
+            onChange: canvasGrid.renderAll.bind(canvasGrid),
+            onComplete: function () {
+                let canvasElement = document.getElementById('grid');
+                let MIME_TYPE = "image/png";
 
-        var canvasElement = document.getElementById('grid');
+                let imgURL = canvasElement.toDataURL(MIME_TYPE);
 
-        var MIME_TYPE = "image/png";
+                /** post zum Server */
 
-        var imgURL = canvasElement.toDataURL(MIME_TYPE);
+                var dlLink = document.createElement('a');
+                dlLink.download = "fileName";
+                dlLink.href = imgURL;
+                dlLink.dataset.downloadurl = [MIME_TYPE, dlLink.download, dlLink.href].join(':');
 
-        /** post zum Server */
+                document.body.appendChild(dlLink);
+                dlLink.click();
+                document.body.removeChild(dlLink);
+                for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
+                    for (let y = 0; y < amountOfHorizontalLines+1; y++) {
+                        node = horizontalNodes[Math.min(x,amountOfVerticalLines)][Math.min(y,amountOfHorizontalLines-1)];
+                        node.opacity = 1;
+                        node = verticalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines)];
+                        node.opacity = 1;
+                        node = normalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines-1)];
+                        node.opacity = 1;
+                    }
+                }
+            }
+        });
+    }
 
-        var dlLink = document.createElement('a');
-        dlLink.download = "fileName";
-        dlLink.href = imgURL;
-        dlLink.dataset.downloadurl = [MIME_TYPE, dlLink.download, dlLink.href].join(':');
 
-        document.body.appendChild(dlLink);
-        dlLink.click();
-        document.body.removeChild(dlLink);
+    /**
+     * Vertauscht den z-Index der beiden Canvases bzw. eigentlich die div's der Canvases
+     * und verwirft aktive Form-Objekte (Kreis, Rechteck)
+     */
+    function switchLayers() {
+        if(document.getElementById('layerGrid').style.zIndex === "1"){
+            document.getElementById('layerGrid').style.zIndex = "0";
+            document.getElementById('layerForms').style.zIndex = "1";
+        }else{
+            canvasForms.discardActiveObject();
+            canvasForms.renderAll();
+            document.getElementById('layerForms').style.zIndex = "0";
+            document.getElementById('layerGrid').style.zIndex = "1";
+        }
+    }
+
+    /**
+     * Fügt der Forms-Canvas ein neues Kreis-Objekt hinzu
+     * Attribute:
+     *      siehe makeNode(), makeMiddleNode() oder makeMiddelPoint()
+     * Framework:
+     *      fabric.js
+     */
+    function addCircle(){
+        canvasForms.add(new fabric.Circle({
+            radius: 40,
+            left: canvasForms.width/2,
+            top: canvasForms.height/2,
+            fill: '#cccccc',
+            opacity: 0.95
+        }));
+    }
+
+    /**
+     * Fügt der Forms-Canvas ein neues Rechteck-Objekt hinzu
+     * Attribute:
+     *      siehe makeNode()
+     * Framework:
+     *      fabric.js
+     */
+    function addRect() {
+        canvasForms.add(new fabric.Rect({
+            left: canvasForms.width/2,
+            top: canvasForms.height/2,
+            fill: '#cccccc',
+            width: 50,
+            height: 50,
+            opacity: 0.95
+        }));
+    }
+
+    /**
+     * Löscht das ausgewählt Objekt von der Forms-Canvas
+     * Framewokr:
+     *      fabric.js
+     */
+    function removeForm(){
+        let activeObjects = canvasForms.getActiveObjects();
+        canvasForms.discardActiveObject()
+        if (activeObjects.length) {
+            canvasForms.remove.apply(canvasForms, activeObjects);
+        }
     }
 
     /**
@@ -667,7 +784,6 @@
             });
         }
     };
-
 </script>
 </body>
 </html>

@@ -12,9 +12,10 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 ![Amsler-Grid](grid.png)
 
 ## Besonderheit:
-* Größe der Canvas kann beliebig sein    
+* Größe der Canvases kann beliebig sein    
 ```html 
     <canvas id="grid" width="720" height="450"></canvas>
+    <canvas id="from" width="960" height="540" ></canvas>
 ```
 * Anzahl der horizontalen und vertikalen Linien kann beliebig sein
 ```javascript
@@ -32,6 +33,11 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
     /** Knoten-Farbe */
     let nodecolor = "black"; // oder '#000'
 ```
+
+* Man kann Rechtecke und Kreise auf das Amsler-Gitter aufbringen und ihre Größe und Form anpassen 
+(dazu über den Button "Switch Layers" in die andere Ebene wechseln und loslegen. Um wieder das Grid anzupassen, Button nochmal drücken)
+
+* Ausgewächlte Flächen können auch wieder entfernt werden
 
 * Horizontale und vertikale Linien können über die zwei Tick-Boxen separat unsichtbar gemacht werden 
 
@@ -60,10 +66,13 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 
 ## Weitere Entwicklung:
 - [x] Amsler-Gitter aus gespeicherten Daten wiederherstellen
+- [ ] Formen sichern und wieder herstellen
 - [ ] Sicherheits-Mechanismen einbauen
-- [ ] Kästchen in Amsler-Gitter markieren
+- [x] Kästchen in Amsler-Gitter markieren
 - [ ] POST zum Server (`array`, `.png`)
-- [ ] Knoten beim Export des Bildes ausschalten
+- [x] Knoten beim Export des Bildes ausschalten
+- [ ] Bild mit den Flächen
+- [ ] Auf Tablets testen
 
 ## Getestete Browser:
 - [x] Chrome/Chromium
