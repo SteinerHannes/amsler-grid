@@ -3,10 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title></title>
+
+    <style>
+        .colors>button.active {
+            font-weight: bolder;
+            background-color: gray;
+        }
+    </style>
 </head>
 <body>
 <button id="export" onclick="exportData()">Export</button>
 <button id="log" onclick="logData()">Log</button>
+<div class="colors"></div>
 <canvas id="grid" width="1440" height="770"></canvas>
 </body>
 
@@ -43,8 +51,11 @@
         let log = "";
         for (const row of data) {
             let line = "";
-            for (const bool of row) {
-                line += bool ? "1 " : "0 ";
+            for (const color of row) {
+                if (color === null)
+                    line += "0";
+                else
+                    line += color.substr(0, 1);
             }
             line += "\n";
             log += line
@@ -57,12 +68,14 @@
         const x = event.target.posData[0];
         const y = event.target.posData[1];
 
-        if (event.target.fill === "transparent") {
-            event.target.fill = selectColor;
-            data[y-1][x-1] = true;
-        } else {
+        const currentFill = event.target.fill;
+
+        if (currentFill === activeColor) {
             event.target.fill = "transparent";
-            data[y-1][x-1] = false;
+            data[y-1][x-1] = null;
+        } else {
+            event.target.fill = activeColor;
+            data[y-1][x-1] = activeColor;
         }
         event.target.dirty = true;
     }
@@ -74,7 +87,6 @@
     const numVertical = 16;
     /**  */
     const lineWidth = 3.5;
-    const selectColor = "red";
 
     const canvasGrid = new fabric.Canvas('grid',{
         selection: false,
@@ -102,7 +114,7 @@
 
     let data = [];
     for (let y = 1; y <= numHorizontal+1; y++) {
-        data.push(new Array(numVertical+1).fill(false));
+        data.push(new Array(numVertical+1).fill(null));
     }
 
     let verticalLines = [];
@@ -121,6 +133,31 @@
     }
     canvasGrid.renderAll();
     canvasGrid.renderOnAddRemove = true;
+
+
+    const colors = ["red", "blue", "green", "purple"];
+    const buttonContainer = document.querySelector(".colors");
+    colors.forEach((color) => {
+        const button = document.createElement("button");
+        button.textContent = color;
+
+        button.addEventListener("click", (event) => {
+            activeColor = color;
+
+            document.querySelectorAll(".colors>button").forEach((button) => {
+                button.classList.remove("active");
+            });
+
+            event.target.classList.add("active");
+        });
+
+        buttonContainer.appendChild(button);
+    });
+
+    let activeColor = colors[0];
+    document.querySelector(".colors>button").classList.add("active");
+
+
 
 
 
