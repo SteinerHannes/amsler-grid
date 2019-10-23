@@ -3,7 +3,7 @@
 <script src="fabric.min.js"></script>
 <head>
     <meta charset="UTF-8">
-    <title>Froms</title>
+    <title>Draw</title>
 </head>
 <body>
 <label for="horizontal">Horizontal: </label><input type="checkbox" id="horizontal" onclick="toggleHorizontal()">
@@ -11,21 +11,27 @@
 <input type="button" id="return" onclick="returnAmslerGrid()" value="Output As Array">
 <input type="button" id="print" onclick="exportCanvasAsPNG()" value="Download As PNG">
 <input type="button" id="creat" onclick="recreateAmslerGrid()" value="Load">
-<input type="button" id="addCircle" onclick="addCircle()" value="Add Circle">
-<input type="button" id="addRect" onclick="addRect()" value="Add Rectangle">
-<input type="button" id="remove" onclick="removeForm()" value="Remove Selected Object">
+<input type="button" id="clear" onclick="clearColor()" value="Clear Color">
+
 <input type="button" id="switch" onclick="switchLayers()" value="Switch Layers">
 <input type="button" id="nodes" onclick="turnNodesOnOff()" value="On/Off Nodes">
 <div style="position: relative;">
     <div id="layerGrid" style="position: absolute; left: 0; top: 0; z-index: 1;">
         <canvas id="grid" width="960" height="540"></canvas>
     </div>
-    <div id="layerForms" style="position: absolute; left: 0; top: 0; z-index: 0;">
-        <canvas id="from" width="960" height="540" ></canvas>
+    <div id="layerDraw" style="position: absolute; left: 0; top: 0; z-index: 0;">
+        <canvas id="draw" width="960" height="540" ></canvas>
     </div>
 </div>
 
 <script>
+
+    /** Resetet die Zeichen Canvas */
+    function clearColor(){
+        canvasDraw.clear();
+    }
+
+
 
     /** Varible zum wiederherstellen gespeicherter Daten*/
     let savedata;
@@ -52,15 +58,13 @@
      */
     let canvasGrid;
     /**
-     * Canvas-Variable für Figuren/Forms
-     * - ensteht aus dem HTML-Canvas-Element mit der id="from"
-     * Attribute:
-     *      selection: false
-     *          Verhindert das markieren von Knoten auf dem Grid
+     * Canvas-Variable fürs Zeichnen
+     * - ensteht aus dem HTML-Canvas-Element mit der id="draw"
+     *
      * Framework:
      *      fabric.js
      */
-    let canvasForms;
+    let canvasDraw;
 
     // setzt die Entstehungspunkte jedes neuen Objektes in die Mitte des Objektes (Bsp. bei Kreis: Mittelpunkt ist Entstehungspunkt)
     fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
@@ -94,18 +98,19 @@
     let normalNodes;
 
 
-
     /**
      * Annonyme-Funktion die sofort ausgeführt wird, nachdem sie erstellt wurde.
      */
     (function () {
         canvasGrid =  new fabric.Canvas('grid',{
-            selection: false,
+            selection: false
         });
 
-        canvasForms =  new fabric.Canvas('from',{
-            selection: false,
+        canvasDraw =  new fabric.Canvas('draw',{
+            isDrawingMode: true
         });
+        // Brush fürs Zeichnen
+        //
 
         // Events, die auf dem Grid stattfinden ('<Event-Name>': <Funktions-Name>)
         canvasGrid.on({
@@ -147,7 +152,6 @@
             evented: false
         }));
     }
-
 
     /**
      * Erstellt das inteaktive Grid auf der Canvas
@@ -697,53 +701,18 @@
 
     /**
      * Vertauscht den z-Index der beiden Canvases bzw. eigentlich die div's der Canvases
-     * und verwirft aktive Form-Objekte (Kreis, Rechteck)
      */
     function switchLayers() {
         if(document.getElementById('layerGrid').style.zIndex === "1"){
             document.getElementById('layerGrid').style.zIndex = "0";
-            document.getElementById('layerForms').style.zIndex = "1";
+            document.getElementById('layerDraw').style.zIndex = "1";
+            canvasDraw.isDrawingMode = true;
         }else{
-            canvasForms.discardActiveObject();
-            canvasForms.renderAll();
-            document.getElementById('layerForms').style.zIndex = "0";
+            document.getElementById('layerDraw').style.zIndex = "0";
             document.getElementById('layerGrid').style.zIndex = "1";
+            canvasDraw.isDrawingMode = false;
+            //canvasGrid.isDrawingMode = false;
         }
-    }
-
-    /**
-     * Fügt der Forms-Canvas ein neues Kreis-Objekt hinzu
-     * Attribute:
-     *      siehe makeNode(), makeMiddleNode() oder makeMiddelPoint()
-     * Framework:
-     *      fabric.js
-     */
-    function addCircle(){
-        canvasForms.add(new fabric.Circle({
-            radius: 40,
-            left: canvasForms.width/2,
-            top: canvasForms.height/2,
-            fill: '#cccccc',
-            opacity: 0.95
-        }));
-    }
-
-    /**
-     * Fügt der Forms-Canvas ein neues Rechteck-Objekt hinzu
-     * Attribute:
-     *      siehe makeNode()
-     * Framework:
-     *      fabric.js
-     */
-    function addRect() {
-        canvasForms.add(new fabric.Rect({
-            left: canvasForms.width/2,
-            top: canvasForms.height/2,
-            fill: '#cccccc',
-            width: 50,
-            height: 50,
-            opacity: 0.95
-        }));
     }
 
     /**
@@ -782,19 +751,6 @@
             }
         }
         canvasGrid.renderAll();
-    }
-
-    /**
-     * Löscht das ausgewählt Objekt von der Forms-Canvas
-     * Framewokr:
-     *      fabric.js
-     */
-    function removeForm(){
-        let activeObjects = canvasForms.getActiveObjects();
-        canvasForms.discardActiveObject();
-        if (activeObjects.length) {
-            canvasForms.remove.apply(canvasForms, activeObjects);
-        }
     }
 
     /**
