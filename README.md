@@ -41,6 +41,7 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 
 * Horizontale und vertikale Linien können über die zwei Tick-Boxen separat unsichtbar gemacht werden 
 
+* Mit Hilfe einer Zeichenfunktion können Formen per Hand auf das Grid gemalt werden.
 
 ## Schnittstellen:
 * ```returnAmslerGrid()``` Gibt ein Array mit allen Veränderten Knoten zurück. <br>***(POST zum Server muss implementiert werden!)***
@@ -66,11 +67,12 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 
 ## Weitere Entwicklung:
 - [x] Amsler-Gitter aus gespeicherten Daten wiederherstellen
-- [ ] Formen sichern und wieder herstellen
-- [ ] Sicherheits-Mechanismen einbauen
 - [x] Malen 
 - [x] Kästchen in Amsler-Gitter markieren
 - [x] Knoten beim Export des Bildes ausschalten
+- [ ] Formen sichern und wieder herstellen
+- [ ] Gezeichnetes sichern und wieder herstellen
+- [ ] Sicherheits-Mechanismen einbauen
 - [ ] Auf Tablets testen
 - [ ] Touch-Events für Tablet
 
