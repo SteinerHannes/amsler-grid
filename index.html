@@ -21,7 +21,7 @@
         <canvas id="grid" width="960" height="540"></canvas>
     </div>
     <div id="layerForms" style="position: absolute; left: 0; top: 0; z-index: 0;">
-        <canvas id="from" width="960" height="540" ></canvas>
+        <canvas id="from" width="960" height="540"></canvas>
     </div>
 </div>
 
@@ -94,16 +94,15 @@
     let normalNodes;
 
 
-
     /**
      * Annonyme-Funktion die sofort ausgeführt wird, nachdem sie erstellt wurde.
      */
     (function () {
-        canvasGrid =  new fabric.Canvas('grid',{
+        canvasGrid = new fabric.Canvas('grid', {
             selection: false,
         });
 
-        canvasForms =  new fabric.Canvas('from',{
+        canvasForms = new fabric.Canvas('from', {
             selection: false,
         });
 
@@ -137,11 +136,11 @@
      * Framework:
      *      fabric.js
      */
-    function addMiddelPoint(){
+    function addMiddelPoint() {
         canvasGrid.add(new fabric.Circle({
-            radius: (Math.min(canvasGrid.width,canvasGrid.height)/Math.min(amountOfVerticalLines,amountOfHorizontalLines))/8,
-            left: canvasGrid.width/2,
-            top: canvasGrid.height/2,
+            radius: (Math.min(canvasGrid.width, canvasGrid.height) / Math.min(amountOfVerticalLines, amountOfHorizontalLines)) / 8,
+            left: canvasGrid.width / 2,
+            top: canvasGrid.height / 2,
             fill: 'black',
             selectable: false,
             evented: false
@@ -165,9 +164,9 @@
     function creatAmslerGrid() {
         // Optimierung fuer das Rendern vieler Objecte auf einmal
         for (let x = 1; x <= amountOfVerticalLines; x++) {
-            verticalLines[x-1] = [amountOfHorizontalLines+1];
-            verticalNodes[x-1] = [amountOfHorizontalLines+1];
-            for (let y = 1; y <= amountOfHorizontalLines+1; y++) {
+            verticalLines[x - 1] = [amountOfHorizontalLines + 1];
+            verticalNodes[x - 1] = [amountOfHorizontalLines + 1];
+            for (let y = 1; y <= amountOfHorizontalLines + 1; y++) {
                 let line = makeLine();
                 // Bezierkurven-Start-Punkt setzen
                 line.path[0][1] = (x * widthScale);
@@ -178,18 +177,18 @@
                 // Bezierkurven-End-Punkt setzen
                 line.path[1][3] = (x * widthScale);
                 line.path[1][4] = (y * heightScale);
-                verticalLines[x-1][y-1] = line;
+                verticalLines[x - 1][y - 1] = line;
                 canvasGrid.add(line);
                 let middelNode = makeMiddelNode((x * widthScale), ((y * heightScale + (heightScale / 2)) - heightScale), line);
                 middelNode.name = "m";
-                verticalNodes[x-1][y-1] = middelNode;
+                verticalNodes[x - 1][y - 1] = middelNode;
                 canvasGrid.add(middelNode);
             }
         }
 
-        for (let x = 1; x <= amountOfVerticalLines+1; x++) {
-            horizontalLines[x-1] = [amountOfHorizontalLines];
-            horizontalNodes[x-1] = [amountOfHorizontalLines];
+        for (let x = 1; x <= amountOfVerticalLines + 1; x++) {
+            horizontalLines[x - 1] = [amountOfHorizontalLines];
+            horizontalNodes[x - 1] = [amountOfHorizontalLines];
             for (let y = 1; y <= amountOfHorizontalLines; y++) {
                 let line = makeLine();
                 // Bezierkurven-Start-Punkt setzen
@@ -201,11 +200,11 @@
                 // Bezierkurven-End-Punkt setzen
                 line.path[1][3] = (x * widthScale);
                 line.path[1][4] = (y * heightScale);
-                horizontalLines[x-1][y-1] = line;
+                horizontalLines[x - 1][y - 1] = line;
                 canvasGrid.add(line);
                 let middelNode = makeMiddelNode((x * widthScale + (widthScale / 2) - widthScale), (y * heightScale), line);
                 middelNode.name = "m";
-                horizontalNodes[x-1][y-1] = middelNode;
+                horizontalNodes[x - 1][y - 1] = middelNode;
                 canvasGrid.add(middelNode);
             }
         }
@@ -386,8 +385,8 @@
     function toggleHorizontal() {
         let checkBox = document.getElementById("horizontal");
         if (checkBox.checked === true) {
-            for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
-                for(let y = 0 ; y < amountOfHorizontalLines; y++){
+            for (let x = 0; x < amountOfVerticalLines + 1; x++) {
+                for (let y = 0; y < amountOfHorizontalLines; y++) {
                     let nodeElement = horizontalNodes[x][y];
                     nodeElement.selectable = false;
                     nodeElement.animate('opacity', '0', {
@@ -400,9 +399,9 @@
                     });
                 }
             }
-        }else{
-            for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
-                for(let y = 0 ; y < amountOfHorizontalLines; y++){
+        } else {
+            for (let x = 0; x < amountOfVerticalLines + 1; x++) {
+                for (let y = 0; y < amountOfHorizontalLines; y++) {
                     let nodeElement = horizontalNodes[x][y];
                     nodeElement.selectable = true;
                     nodeElement.animate('opacity', '1', {
@@ -425,8 +424,8 @@
     function toggleVertical() {
         let checkBox = document.getElementById("vertical");
         if (checkBox.checked === true) {
-            for(let x = 0 ; x < amountOfVerticalLines; x++) {
-                for(let y = 0 ; y < amountOfHorizontalLines+1; y++){
+            for (let x = 0; x < amountOfVerticalLines; x++) {
+                for (let y = 0; y < amountOfHorizontalLines + 1; y++) {
                     let nodeElement = verticalNodes[x][y];
                     nodeElement.selectable = false;
                     nodeElement.animate('opacity', '0', {
@@ -439,9 +438,9 @@
                     });
                 }
             }
-        }else{
-            for(let x = 0 ; x < amountOfVerticalLines; x++) {
-                for (let y = 0; y < amountOfHorizontalLines+1; y++) {
+        } else {
+            for (let x = 0; x < amountOfVerticalLines; x++) {
+                for (let y = 0; y < amountOfHorizontalLines + 1; y++) {
                     let nodeElement = verticalNodes[x][y];
                     nodeElement.selectable = true;
                     nodeElement.animate('opacity', '1', {
@@ -481,48 +480,48 @@
         let horiNodes = [];
         let normNodes = [];
         //INFORMATION DES ARRAYS SPEICHERN!
-        for(let x = 1; x <= amountOfVerticalLines+1; x++){
-            for(let y = 1; y <= amountOfHorizontalLines+1; y++){
-                if(x < amountOfVerticalLines+1){
-                    let node = verticalNodes[x-1][y-1];
+        for (let x = 1; x <= amountOfVerticalLines + 1; x++) {
+            for (let y = 1; y <= amountOfHorizontalLines + 1; y++) {
+                if (x < amountOfVerticalLines + 1) {
+                    let node = verticalNodes[x - 1][y - 1];
                     // wenn das Node von seiner Initial-Position bewegt wurde
-                    if(node.left % (x * widthScale) !== 0 || node.top % ((y * heightScale + (heightScale / 2)) - heightScale) !== 0){
+                    if (node.left % (x * widthScale) !== 0 || node.top % ((y * heightScale + (heightScale / 2)) - heightScale) !== 0) {
                         let saveNode = {};
-                        saveNode.x = x-1;
-                        saveNode.y = y-1;
+                        saveNode.x = x - 1;
+                        saveNode.y = y - 1;
                         saveNode.top = node.top;
                         saveNode.left = node.left;
                         vertNodes.push(saveNode);
                     }
-                    if(y < amountOfHorizontalLines+1){
-                        node = horizontalNodes[x-1][y-1];
+                    if (y < amountOfHorizontalLines + 1) {
+                        node = horizontalNodes[x - 1][y - 1];
                         // wenn das Node von seiner Initial-Position bewegt wurde
-                        if((node.left % (x * widthScale + (widthScale / 2) - widthScale) !== 0 || node.top % (y * heightScale) !== 0)){
+                        if ((node.left % (x * widthScale + (widthScale / 2) - widthScale) !== 0 || node.top % (y * heightScale) !== 0)) {
                             let saveNode = {};
-                            saveNode.x = x-1;
-                            saveNode.y = y-1;
+                            saveNode.x = x - 1;
+                            saveNode.y = y - 1;
                             saveNode.top = node.top;
                             saveNode.left = node.left;
                             horiNodes.push(saveNode);
                         }
-                        node = normalNodes[x-1][y-1];
+                        node = normalNodes[x - 1][y - 1];
                         // wenn das Node von seiner Initial-Position bewegt wurde
-                        if(node.left % (x * widthScale) !== 0 || node.top % (y * heightScale) !== 0 ){
+                        if (node.left % (x * widthScale) !== 0 || node.top % (y * heightScale) !== 0) {
                             let saveNode = {};
-                            saveNode.x = x-1;
-                            saveNode.y = y-1;
+                            saveNode.x = x - 1;
+                            saveNode.y = y - 1;
                             saveNode.top = node.top;
                             saveNode.left = node.left;
                             normNodes.push(saveNode);
                         }
                     }
-                }else {
-                    if(y < amountOfHorizontalLines+1){
-                        let node = horizontalNodes[x-1][y-1];
-                        if((node.left % (x * widthScale + (widthScale / 2) - widthScale) !== 0 || node.top % (y * heightScale) !== 0)){
+                } else {
+                    if (y < amountOfHorizontalLines + 1) {
+                        let node = horizontalNodes[x - 1][y - 1];
+                        if ((node.left % (x * widthScale + (widthScale / 2) - widthScale) !== 0 || node.top % (y * heightScale) !== 0)) {
                             let saveNode = {};
-                            saveNode.x = x-1;
-                            saveNode.y = y-1;
+                            saveNode.x = x - 1;
+                            saveNode.y = y - 1;
                             saveNode.top = node.top;
                             saveNode.left = node.left;
                             horiNodes.push(saveNode);
@@ -555,18 +554,18 @@
         amountOfVerticalLines = amountVertLines;
         verticalLines = [amountOfVerticalLines];
         verticalNodes = [amountOfVerticalLines];
-        horizontalLines = [amountOfVerticalLines+1];
-        horizontalNodes = [amountOfVerticalLines+1];
+        horizontalLines = [amountOfVerticalLines + 1];
+        horizontalNodes = [amountOfVerticalLines + 1];
         normalNodes = [amountOfVerticalLines];
-        widthScale = canvasGrid.width / (amountOfVerticalLines+1);
-        heightScale = canvasGrid.height / (amountOfHorizontalLines+1);
+        widthScale = canvasGrid.width / (amountOfVerticalLines + 1);
+        heightScale = canvasGrid.height / (amountOfHorizontalLines + 1);
     }
 
     /**
      * Stellt ein Amsler-Gitter an Hand gespeicherter Daten wieder her.
      * Die Daten müssen sich in der Globalen-Variable "savedData" befinden.
      */
-    function recreateAmslerGrid(){
+    function recreateAmslerGrid() {
         // alte Canvas leeren
         canvasGrid.clear();
         let savedData = savedata;
@@ -591,13 +590,13 @@
         let amountVL = savedData[3][2];
         let amountHL = savedData[3][3];
         // Wenn die Canvas und die Anzahl der Linien sich geändert haben sollten...
-        if(canvasHeight !== canvasGrid.height || canvasWidth !== canvasGrid.width || amountOfVerticalLines !== amountVL || amountOfHorizontalLines !== amountHL){
+        if (canvasHeight !== canvasGrid.height || canvasWidth !== canvasGrid.width || amountOfVerticalLines !== amountVL || amountOfHorizontalLines !== amountHL) {
             // Canvas-Größe anpassen
             canvasGrid.setWidth(canvasWidth);
             canvasGrid.setHeight(canvasHeight);
             canvasGrid.calcOffset();
             // Globale Variablen anpassen
-            setGlobalVariables(amountVL,amountHL);
+            setGlobalVariables(amountVL, amountHL);
         }
 
         // Mittelpunkt setzen
@@ -606,7 +605,7 @@
         creatAmslerGrid(amountOfVerticalLines, amountOfHorizontalLines);
         // Knoten (und deren Linien) so anpassen, wie sie in den gespeicherten Daten drin stehen
         let max = vertNodes.length;
-        for(let i = 0; i < max; i++){
+        for (let i = 0; i < max; i++) {
             let temp = vertNodes[i];
             let node = verticalNodes[temp.x][temp.y];
             node.left = temp.left;
@@ -617,7 +616,7 @@
             }
         }
         max = horNodes.length;
-        for(let i = 0; i < max; i++){
+        for (let i = 0; i < max; i++) {
             let temp = horNodes[i];
             let node = horizontalNodes[temp.x][temp.y];
             node.left = temp.left;
@@ -628,7 +627,7 @@
             }
         }
         max = normNodes.length;
-        for(let i = 0; i < max; i++){
+        for (let i = 0; i < max; i++) {
             let temp = normNodes[i];
             let node = normalNodes[temp.x][temp.y];
             node.left = temp.left;
@@ -651,13 +650,13 @@
      */
     function exportCanvasAsPNG() {
         let node;
-        for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
-            for (let y = 0; y < amountOfHorizontalLines+1; y++) {
-                node = horizontalNodes[Math.min(x,amountOfVerticalLines)][Math.min(y,amountOfHorizontalLines-1)];
+        for (let x = 0; x < amountOfVerticalLines + 1; x++) {
+            for (let y = 0; y < amountOfHorizontalLines + 1; y++) {
+                node = horizontalNodes[Math.min(x, amountOfVerticalLines)][Math.min(y, amountOfHorizontalLines - 1)];
                 node.opacity = 0;
-                node = verticalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines)];
+                node = verticalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines)];
                 node.opacity = 0;
-                node = normalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines-1)];
+                node = normalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines - 1)];
                 node.opacity = 0;
             }
         }
@@ -680,13 +679,13 @@
                 document.body.appendChild(dlLink);
                 dlLink.click();
                 document.body.removeChild(dlLink);
-                for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
-                    for (let y = 0; y < amountOfHorizontalLines+1; y++) {
-                        node = horizontalNodes[Math.min(x,amountOfVerticalLines)][Math.min(y,amountOfHorizontalLines-1)];
+                for (let x = 0; x < amountOfVerticalLines + 1; x++) {
+                    for (let y = 0; y < amountOfHorizontalLines + 1; y++) {
+                        node = horizontalNodes[Math.min(x, amountOfVerticalLines)][Math.min(y, amountOfHorizontalLines - 1)];
                         node.opacity = 1;
-                        node = verticalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines)];
+                        node = verticalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines)];
                         node.opacity = 1;
-                        node = normalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines-1)];
+                        node = normalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines - 1)];
                         node.opacity = 1;
                     }
                 }
@@ -700,10 +699,10 @@
      * und verwirft aktive Form-Objekte (Kreis, Rechteck)
      */
     function switchLayers() {
-        if(document.getElementById('layerGrid').style.zIndex === "1"){
+        if (document.getElementById('layerGrid').style.zIndex === "1") {
             document.getElementById('layerGrid').style.zIndex = "0";
             document.getElementById('layerForms').style.zIndex = "1";
-        }else{
+        } else {
             canvasForms.discardActiveObject();
             canvasForms.renderAll();
             document.getElementById('layerForms').style.zIndex = "0";
@@ -718,11 +717,11 @@
      * Framework:
      *      fabric.js
      */
-    function addCircle(){
+    function addCircle() {
         canvasForms.add(new fabric.Circle({
             radius: 40,
-            left: canvasForms.width/2,
-            top: canvasForms.height/2,
+            left: canvasForms.width / 2,
+            top: canvasForms.height / 2,
             fill: '#cccccc',
             opacity: 0.95
         }));
@@ -737,8 +736,8 @@
      */
     function addRect() {
         canvasForms.add(new fabric.Rect({
-            left: canvasForms.width/2,
-            top: canvasForms.height/2,
+            left: canvasForms.width / 2,
+            top: canvasForms.height / 2,
             fill: '#cccccc',
             width: 50,
             height: 50,
@@ -749,33 +748,33 @@
     /**
      * Schaltet die Knoten an oder aus. (Standard: "an")
      */
-    function turnNodesOnOff(){
-        if(isNodesVisible === true){
+    function turnNodesOnOff() {
+        if (isNodesVisible === true) {
             isNodesVisible = false;
-            for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
-                for (let y = 0; y < amountOfHorizontalLines+1; y++) {
-                    node = horizontalNodes[Math.min(x,amountOfVerticalLines)][Math.min(y,amountOfHorizontalLines-1)];
+            for (let x = 0; x < amountOfVerticalLines + 1; x++) {
+                for (let y = 0; y < amountOfHorizontalLines + 1; y++) {
+                    node = horizontalNodes[Math.min(x, amountOfVerticalLines)][Math.min(y, amountOfHorizontalLines - 1)];
                     node.opacity = 0;
                     node.evented = false;
-                    node = verticalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines)];
+                    node = verticalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines)];
                     node.opacity = 0;
                     node.evented = false;
-                    node = normalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines-1)];
+                    node = normalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines - 1)];
                     node.opacity = 0;
                     node.evented = false;
                 }
             }
-        }else{
+        } else {
             isNodesVisible = true;
-            for(let x = 0 ; x < amountOfVerticalLines+1; x++) {
-                for (let y = 0; y < amountOfHorizontalLines+1; y++) {
-                    node = horizontalNodes[Math.min(x,amountOfVerticalLines)][Math.min(y,amountOfHorizontalLines-1)];
+            for (let x = 0; x < amountOfVerticalLines + 1; x++) {
+                for (let y = 0; y < amountOfHorizontalLines + 1; y++) {
+                    node = horizontalNodes[Math.min(x, amountOfVerticalLines)][Math.min(y, amountOfHorizontalLines - 1)];
                     node.opacity = 1;
                     node.evented = true;
-                    node = verticalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines)];
+                    node = verticalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines)];
                     node.opacity = 1;
                     node.evented = true;
-                    node = normalNodes[Math.min(x,amountOfVerticalLines-1)][Math.min(y,amountOfHorizontalLines-1)];
+                    node = normalNodes[Math.min(x, amountOfVerticalLines - 1)][Math.min(y, amountOfHorizontalLines - 1)];
                     node.opacity = 1;
                     node.evented = true;
                 }
@@ -789,7 +788,7 @@
      * Framewokr:
      *      fabric.js
      */
-    function removeForm(){
+    function removeForm() {
         let activeObjects = canvasForms.getActiveObjects();
         canvasForms.discardActiveObject();
         if (activeObjects.length) {

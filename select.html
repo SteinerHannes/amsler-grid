@@ -5,7 +5,7 @@
     <title></title>
 
     <style>
-        .colors>button.active {
+        .colors > button.active {
             font-weight: bolder;
             background-color: gray;
         }
@@ -33,8 +33,8 @@
     function makeRect(x, y) {
         return new fabric.Rect({
             posData: [x, y],
-            left: x * widthScale - widthScale/2,
-            top: y * heightScale - heightScale/2,
+            left: x * widthScale - widthScale / 2,
+            top: y * heightScale - heightScale / 2,
             width: widthScale,
             height: heightScale,
             fill: 'transparent',
@@ -72,10 +72,10 @@
 
         if (currentFill === activeColor) {
             event.target.fill = "transparent";
-            data[y-1][x-1] = null;
+            data[y - 1][x - 1] = null;
         } else {
             event.target.fill = activeColor;
-            data[y-1][x-1] = activeColor;
+            data[y - 1][x - 1] = activeColor;
         }
         event.target.dirty = true;
     }
@@ -85,15 +85,14 @@
     const numHorizontal = 9;
     /** Anzahl der vertikalen Linien */
     const numVertical = 16;
-    /**  */
     const lineWidth = 3.5;
 
-    const canvasGrid = new fabric.Canvas('grid',{
+    const canvasGrid = new fabric.Canvas('grid', {
         selection: false,
     });
 
-    const widthScale = canvasGrid.width / (numVertical+1);
-    const heightScale = canvasGrid.height / (numHorizontal+1);
+    const widthScale = canvasGrid.width / (numVertical + 1);
+    const heightScale = canvasGrid.height / (numHorizontal + 1);
 
     // setzt die Entstehungspunkte jedes neuen Objektes in die Mitte des Objektes (Bsp. bei Kreis: Mittelpunkt ist Entstehungspunkt)
     fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
@@ -101,9 +100,9 @@
     canvasGrid.renderOnAddRemove = false;
 
     let rects = [];
-    for (let x = 1; x <= numVertical+1; x++) {
+    for (let x = 1; x <= numVertical + 1; x++) {
         let row = [];
-        for (let y = 1; y <= numHorizontal+1; y++) {
+        for (let y = 1; y <= numHorizontal + 1; y++) {
             let rect = makeRect(x, y);
             rect.on("mousedown", onClick);
             row.push(rect);
@@ -113,21 +112,21 @@
     }
 
     let data = [];
-    for (let y = 1; y <= numHorizontal+1; y++) {
-        data.push(new Array(numVertical+1).fill(null));
+    for (let y = 1; y <= numHorizontal + 1; y++) {
+        data.push(new Array(numVertical + 1).fill(null));
     }
 
     let verticalLines = [];
     let horizontalLines = [];
     for (let x = 1; x <= numVertical; x++) {
-        let l = makeLine([x*widthScale, 0, x*widthScale, canvasGrid.height]);
+        let l = makeLine([x * widthScale, 0, x * widthScale, canvasGrid.height]);
         verticalLines.push(l);
         canvasGrid.add(l);
     }
 
 
     for (let y = 1; y <= numHorizontal; y++) {
-        let l = makeLine([0, y*heightScale, canvasGrid.width, y*heightScale]);
+        let l = makeLine([0, y * heightScale, canvasGrid.width, y * heightScale]);
         horizontalLines.push(l);
         canvasGrid.add(l);
     }
@@ -156,9 +155,6 @@
 
     let activeColor = colors[0];
     document.querySelector(".colors>button").classList.add("active");
-
-
-
 
 
 </script>
