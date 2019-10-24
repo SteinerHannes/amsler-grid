@@ -68,9 +68,9 @@ An einer Kreuzung befindet sich ein Knoten, mit dem die Position der Kreuzung ve
 - [x] Amsler-Gitter aus gespeicherten Daten wiederherstellen
 - [ ] Formen sichern und wieder herstellen
 - [ ] Sicherheits-Mechanismen einbauen
+- [x] Malen 
 - [x] Kästchen in Amsler-Gitter markieren
 - [x] Knoten beim Export des Bildes ausschalten
-- [ ] Bild mit den Flächen
 - [ ] Auf Tablets testen
 - [ ] Touch-Events für Tablet
 
